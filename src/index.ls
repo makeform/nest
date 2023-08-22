@@ -16,7 +16,7 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
 
-  pubsub.on \init-field, ({mode, fields, view}) ->
+  pubsub.on \init.nest, ({mode, fields, view}) ->
     obj.mode = mode or \list
     obj.fields = fields
     obj.viewcfg = view

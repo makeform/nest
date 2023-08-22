@@ -3,7 +3,7 @@
 a nested widget without UI meant to be extend by the actual widget designed by user.
 
 
-init with pubsub event 'init-field' (TBD) with following fields:
+init with pubsub event `init.nest` with following fields:
 
  - `mode`: either `list` or `object`. default `list`.
  - `view`: object with following fields for different purpose view cfg object:
