@@ -175,4 +175,8 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
         return []
 
   adapt: -> obj.host = it
-  manager: -> [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
+  manager: ->
+    [v for k,v of obj.entry or {}]
+      .map -> ([it.formmgr] ++ it.formmgr.manager!).filter(->it)
+      .reduce(((a,b) -> a ++ b),[])
+      .filter -> it
