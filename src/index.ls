@@ -169,7 +169,7 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
       .then (rs) ~>
         count = [0,0,0]
         rs.forEach (o) -> count[o.status]++
-        if count.2 => return ["error"]
+        if count.2 => return ["nested"]
         # some fields are not touched. thus, this widget is editing
         if count.1 => return {status: 3, errors: []}
         return []
