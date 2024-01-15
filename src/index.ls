@@ -140,7 +140,9 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
 
   render: -> if obj.view => obj.view.render!
   is-equal: (a,b) -> JSON.stringify(a) == JSON.stringify(b)
-  is-empty: (a) -> !a or JSON.stringify(a) == "{}" or !a.list or !a.list.length
+  is-empty: (a) ->
+    if obj.mode == \list => return !a or JSON.stringify(a) == "{}" or !a.list or !a.list.length
+    return !a or JSON.stringify(a) == "{}"
   content: ->
     if obj.mode == \list => obj.data.list # for term validation to work.
     else obj.data.object
