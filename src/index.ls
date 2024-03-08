@@ -16,10 +16,11 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
 
-  pubsub.on \init.nest, ({mode, fields, view}) ->
+  pubsub.on \init.nest, ({mode, fields, view, onchange}) ->
     obj.mode = mode or \list
     obj.fields = fields
     obj.viewcfg = view
+    obj.onchange = onchange
     if obj.init => obj.init!
 
   init: ->
@@ -34,11 +35,15 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
         obj.data.list.map (e) ->
           if !obj.entry[e.key] => return
           ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
-          Promise.all ps .then -> obj.entry[e.key].formmgr.value e.value
+          Promise.all ps
+            .then -> obj.entry[e.key].formmgr.value e.value
+            .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[e.key].formmgr}
       else
         key = undefined
         ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
-        Promise.all ps .then -> obj.entry[key].formmgr.value obj.data.object
+        Promise.all ps
+          .then -> obj.entry[key].formmgr.value obj.data.object
+          .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
 
     _viewcfg = (viewcfg) ~>
       update = ~> @value(if obj.mode == \list => obj.data{list} else obj.data{object})
@@ -68,6 +73,7 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
                   # thus we get the data object directly from obj.data.list
                   if !(ret = obj.data.list.filter(-> it.key == ctx.key).0) => return
                   ret.value = JSON.parse(JSON.stringify(fmgr.value!))
+
                 else
                   obj.data.object = JSON.parse(JSON.stringify(fmgr.value!))
                 update!

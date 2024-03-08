@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.0.4
+
+ - support `onchange` parameter for extending nest with custom actions when there are changes.
+
+
 ## v0.0.3
 
  - fix bug: `empty` should be checked based on mode

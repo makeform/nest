@@ -14,6 +14,8 @@ init with pubsub event `init.nest` with following fields:
       name: {type: "@makeform/input", meta: {isRequired: true}},
       desc: {type: "@makeform/textarea", meta: {isRequired: false, title: "description"}},
     }
+ - `onchange(o)`: called when there are changes from formmgr. `o` is an object with following fields:
+   - `formmgr`: the formmgr from which the change event fires.
 
 
 ## Usage
