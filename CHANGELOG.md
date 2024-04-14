@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.0.5
+
+ - support custom validation function
+
+
 ## v0.0.4
 
  - support `onchange` parameter for extending nest with custom actions when there are changes.

@@ -16,11 +16,12 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
 
-  pubsub.on \init.nest, ({mode, fields, view, onchange}) ->
+  pubsub.on \init.nest, ({mode, fields, view, onchange, validate}) ->
     obj.mode = mode or \list
     obj.fields = fields
     obj.viewcfg = view
     obj.onchange = onchange
+    obj.validate = validate
     if obj.init => obj.init!
 
   init: ->
@@ -178,9 +179,15 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
         count = [0,0,0]
         rs.forEach (o) -> count[o.status]++
         if count.2 => return ["nested"]
-        # some fields are not touched. thus, this widget is editing
-        if count.1 => return {status: 3, errors: []}
-        return []
+        Promise.resolve!
+          .then ->
+            if !obj.validate => return
+            obj.validate opt, obj
+          .then (ret) ->
+            if ret => return that
+            # some fields are not touched. thus, this widget is editing
+            if count.1 => return {status: 3, errors: []}
+            return []
 
   adapt: -> obj.host = it
   manager: -> [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)

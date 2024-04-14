@@ -16,6 +16,14 @@ init with pubsub event `init.nest` with following fields:
     }
  - `onchange(o)`: called when there are changes from formmgr. `o` is an object with following fields:
    - `formmgr`: the formmgr from which the change event fires.
+ - `validate(opt,obj)`: customized validation function.
+   - `opt`: options including `init`, `force`. see `@plotdb/form` for more information.
+   - `obj`: additional object from nest widget. contains following fields:
+     - `entry`: a hash for all entries. containing `formmgr` field for manipulation.
+       - WIP this is only tested against list mode.
+   - it should return either null (for no error), or:
+     - a list of error messages.
+     - an object with `status` field (0 ~ 3) and `errors` fields (a list of error messages)
 
 
 ## Usage
