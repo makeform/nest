@@ -24,6 +24,10 @@ init with pubsub event `init.nest` with following fields:
    - it should return either null (for no error), or:
      - a list of error messages.
      - an object with `status` field (0 ~ 3) and `errors` fields (a list of error messages)
+ - `instance`: the block instance of your block. optional.
+   - while `@makeform/nest` renders things for you, it doesn't have your instance object and thus
+     it can't call your transform for i18n if needed. If you need post-i18n during view rendering,
+     put your instance object (usually available in `@_instance`) here.
 
 
 ## Usage

@@ -16,12 +16,13 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
 
-  pubsub.on \init.nest, ({mode, fields, view, onchange, validate}) ->
+  pubsub.on \init.nest, ({mode, fields, view, onchange, validate, instance}) ->
     obj.mode = mode or \list
     obj.fields = fields
     obj.viewcfg = view
     obj.onchange = onchange
     obj.validate = validate
+    obj.instance = instance
     if obj.init => obj.init!
 
   init: ->
@@ -54,6 +55,10 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
           list.push {value: {}, key: Math.random!toString(36).substring(2), idx: list.length + 1}
           update!
           obj.view.render!
+          # ld-each entry may need i18n translation again if we change language after ldview inited.
+          # thus, we will transform everytime after rendering.
+          # we may need a better way to handle this.
+          if obj.instance and obj.instance.transform => obj.instance.transform \i18n
         delete: ({node, ctx, ctxs}) ->
           list = obj.data.list
           list.splice list.indexOf(ctx), 1

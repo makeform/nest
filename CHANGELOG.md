@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.0.6
+
+ - support `instance` option for i18n
+
+
 ## v0.0.5
 
  - support custom validation function
