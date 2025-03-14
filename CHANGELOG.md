@@ -1,6 +1,6 @@
 # Change Logs
 
-## v0.1.0 (upcoming)
+## v0.1.0
 
  - proper document init order
  - add `display` option to support toggling active item
