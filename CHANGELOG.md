@@ -1,5 +1,20 @@
 # Change Logs
 
+## v0.1.0 (upcoming)
+
+ - proper document init order
+ - add `display` option to support toggling active item
+ - fallback viewcfg to {} to prevent exception and simplify api
+ - add `condctrl` and condition support
+ - support additional init function
+ - support `manager.changed` event for deep nested widgets
+ - check field availability before accessing and always fire exception
+ - directly support visibility control
+ - provide acommpanying mixin including `widget` and `vis` mixins in pug.
+ - recursive validation check only fields that are not disabled
+ - pass `force` option into recursive validation
+
+
 ## v0.0.6
 
  - support `instance` option for i18n

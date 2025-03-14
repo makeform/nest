@@ -1,0 +1,7 @@
+//- module
+mixin widget(name)
+  div(ld="visibility",data-name=name)&attributes(attributes)
+    div(ld-scope,ld="block",data-name=name)
+mixin vis(name, visible)
+  div(class=(visible?"":"d-none"),ld="visibility",data-name=name)&attributes(attributes)
+    block

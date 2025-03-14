@@ -1,11 +1,17 @@
+console.log 'blah'
 module.exports =
   pkg:
     extend: {name: "@makeform/common"}
     dependencies: [
+      {name: "proxise"}
       {name: "ldview"}
       {name: "@plotdb/form"}
     ]
-  init: (opt) -> opt.pubsub.fire \subinit, mod: mod(opt)
+  init: (opt) ->
+    # subinit > init > @widget is created.
+    # thus, when subblock fire `init.nest`, widget can be consider prepared
+    # we may consider adding `widget.inited` event in @makeform/base
+    opt.pubsub.fire \subinit, mod: mod(opt)
 
 mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
   {ldview, form} = ctx
@@ -16,14 +22,19 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
 
-  pubsub.on \init.nest, ({mode, fields, view, onchange, validate, instance}) ->
+  pubsub.on \init.nest, ({init, mode, display, fields, conditions, view, onchange, validate, instance}) ~>
     obj.mode = mode or \list
+    obj.display = display or \all # active or all
     obj.fields = fields
-    obj.viewcfg = view
+    obj.conditions = conditions
+    obj.viewcfg = view or {}
     obj.onchange = onchange
     obj.validate = validate
     obj.instance = instance
-    if obj.init => obj.init!
+    # obj.init should be available since obj.init will be prepared synchronously in init below.
+    Promise.resolve!
+      .then -> if obj.init => obj.init!
+      .then -> if init => init obj
 
   init: ->
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
@@ -32,6 +43,7 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
       if obj.mode == \list =>
         obj.data.[]list
         keys = obj.data.list.map -> it.key
+        if !obj.active-key => obj.active-key = keys.0
         for k,v of obj.entry => if !(k in keys) => delete obj.entry[k]
         obj.view.render!
         obj.data.list.map (e) ->
@@ -69,25 +81,46 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
         "no-entry": ({node}) ~> node.classList.toggle \d-none, @content!length
         entry:
           init:
-            "@": ({ctx}) ~>
-              obj.entry[ctx.key] = {block: {}, formmgr: fmgr = new form.manager!}
+            "@": ({ctx, views}) ~>
+              # cond use itf from fields. yet obj.fields is shared. so we dup it here.
+              obj.entry[ctx.key] =
+                fields: {}
+                block: {}
+                formmgr: fmgr = new form.manager!
+                cond: new condctrl!
+              for k,v of obj.fields => obj.entry[ctx.key].fields[k] = {} <<< v
+
+              obj.entry[ctx.key].cond.list = (obj.conditions or [])
+              obj.entry[ctx.key].cond.init {fields: obj.entry[ctx.key].fields}
               fmgr.mode @mode!
+              debounce 350 .then ->
+                obj.entry[ctx.key].cond.run!
+                views.0.render!
               fmgr.on \change, ->
+                obj.entry[ctx.key].cond.run!
+                views.0.render!
+
                 if obj.mode == \list =>
                   # ctx may not be the original object, because it may be updated
                   # and this is init which will only be called once.
                   # thus we get the data object directly from obj.data.list
                   if !(ret = obj.data.list.filter(-> it.key == ctx.key).0) => return
                   ret.value = JSON.parse(JSON.stringify(fmgr.value!))
-
                 else
                   obj.data.object = JSON.parse(JSON.stringify(fmgr.value!))
                 update!
+              @fire \manager.changed
+              console.log "i18n"
+              if obj.instance and obj.instance.transform => obj.instance.transform \i18n
             block: ({node, ctxs, ctx}) ~>
               entry = obj.entry[ctx.key]
-              name = node.getAttribute(\data-name)
-              if !(cfg = JSON.parse JSON.stringify obj.fields[name]) =>
-                return console.warn "config not found for field #{name}"
+              name = node.dataset.name
+              try
+                if !obj.fields[name] or !(cfg = JSON.parse JSON.stringify obj.fields[name]) =>
+                  throw new Error("config not found for field #{name}")
+              catch e
+                console.warn "exception when parsing block data for field name `#name`."
+                throw e
               if !cfg.meta.title => cfg.meta.title = name
               entry.block[name] = 
                 cfg: cfg
@@ -101,6 +134,8 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
               manager.from bdef, {root: node, data: cfg.meta}
                 .then (o) ~>
                   cfg <<< {itf: o.interface, bi: o.instance, root: node}
+                  # this is for cond
+                  entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
                   o.interface.adapt({} <<< obj.host <<< {
                     upload: ({file, progress, alias}) ~>
                       obj.host.upload({file, progress, alias: alias or name})
@@ -109,15 +144,33 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
                   cfg.itf.mode entry.formmgr.mode!
                   entry.block[name].inited = true
                   entry.block[name].init.resolve true
+                  if o.interface.manager!length => @fire \manager.changed
+                  o.interface.on \manager.changed, ~> @fire \manager.changed
                 .catch (e) -> return Promise.reject(e)
           handler:
+            "@": ({node, ctx}) ~>
+              if obj.display != \active => return
+              node.classList.toggle \d-none, (ctx.key != obj.active-key)
+
+            visibility: ({node, ctx}) ~>
+              name = node.getAttribute \data-name
+              node.classList.toggle \d-none, false
+              vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
+              node.classList.toggle \d-none, (vis? and !vis)
+
             block: ({node, ctxs, ctx}) ~>
               name = node.getAttribute(\data-name)
               cfg = (((obj.entry[ctx.key] or {}).block or {})[name] or {}).cfg or {}
               node.classList.toggle \d-none, false
-              if !cfg.itf => return
-              cfg.bi.transform \i18n
-              cfg.itf.render!
+              vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
+
+              node.classList.toggle \d-none, (vis? and !vis)
+              # these seem to make no difference,
+              # yet with these performance drops significantly if there are many widgets.
+              # thus, TODO we are going to remove them.
+              # if !cfg.itf => return
+              # cfg.bi.transform \i18n
+              # cfg.itf.render!
 
       opt = {} <<< (viewcfg.common or {}) <<< {
         init-render: false
@@ -143,9 +196,12 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
         opt.{}handler <<< handler.entry.handler
       return opt
 
-    obj.init = ~>
+    obj.init = proxise.once ~>
+      if obj.inited => return
+      obj.inited = true
       if !obj.fields => return
       obj.view = new ldview _viewcfg obj.viewcfg
+      <~ obj.view.init!then _
       obj.view.render!
 
     obj.init!
@@ -167,13 +223,13 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
             ws = [v for k,v of o.block]
             check-ws = ws
               .filter ->
-                it.cfg.itf and (!it.cfg.itf.is-empty! or it.cfg.itf.status! == 2)
+                it.cfg.itf and (!it.cfg.itf.is-empty! or it.cfg.itf.status! == 2) and !it.cfg.itf.disabled!
               .map -> {widget: it.cfg.itf, path: it.path}
             if !check-ws.length and !opt.force =>
               o.status = 1
               return o
             check-ws = if opt.force => null else check-ws
-            o.formmgr.check check-ws, {now: true, init: is-init}
+            o.formmgr.check check-ws, {now: true, init: is-init, force: opt.force}
               .then (r) ->
                 o.status = if r.length => 2
                 else if is-init or (check-ws and check-ws.length < ws.length) => 1
@@ -195,4 +251,12 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
             return []
 
   adapt: -> obj.host = it
-  manager: -> [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
+  manager: (cb) ->
+    ret = [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
+    for k,v of obj.entry => for g,u of v.block =>
+      if u.cfg.itf and (mgrs = u.cfg.itf.manager!).length => ret ++= mgrs
+    ret
+  ctrl: ->
+    toggle: (o = {}) ~>
+      if o.key => obj.active-key = o.key
+      obj.view.render!
