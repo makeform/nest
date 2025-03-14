@@ -1,4 +1,3 @@
-console.log 'blah'
 module.exports =
   pkg:
     extend: {name: "@makeform/common"}
@@ -110,7 +109,6 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
                   obj.data.object = JSON.parse(JSON.stringify(fmgr.value!))
                 update!
               @fire \manager.changed
-              console.log "i18n"
               if obj.instance and obj.instance.transform => obj.instance.transform \i18n
             block: ({node, ctxs, ctx}) ~>
               entry = obj.entry[ctx.key]
