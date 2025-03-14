@@ -93,9 +93,12 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
               obj.entry[ctx.key].cond.init {fields: obj.entry[ctx.key].fields}
               fmgr.mode @mode!
               debounce 350 .then ->
+                # prevent exception caused byquick deletion
+                if !obj.entry[ctx.key] => return
                 obj.entry[ctx.key].cond.run!
                 views.0.render!
               fmgr.on \change, ->
+                if !obj.entry[ctx.key] => return
                 obj.entry[ctx.key].cond.run!
                 views.0.render!
 
