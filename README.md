@@ -72,3 +72,15 @@ Available mixins:
 
  - `widget(name)`: create a widget with specific name.
  - `vis(name)`: add a visibility control with specific name.
+
+
+## ld selectors
+
+ - `lng`: show this node only if current i18n language tag or code matches `data-lng` value.
+ - `visibility`: show this node based on target name specified by `data-name` from condition controls.
+ - `block`: node containing widget with name stored in `data-name` from `fields`.
+
+
+## License
+
+MIT License
