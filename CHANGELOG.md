@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.1.2
+
+ - fix bug: i18n doesn't work. fields transforming and rendering are still required
+
+
 ## v0.1.1
 
  - fix bug: check `obj.entry[ctx.key]` in debounce function to prevent exception caused by race condition

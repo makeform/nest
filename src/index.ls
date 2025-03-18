@@ -166,12 +166,15 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
               vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
 
               node.classList.toggle \d-none, (vis? and !vis)
-              # these seem to make no difference,
-              # yet with these performance drops significantly if there are many widgets.
-              # thus, TODO we are going to remove them.
-              # if !cfg.itf => return
-              # cfg.bi.transform \i18n
-              # cfg.itf.render!
+              # we should render subblock when this block is rendered.
+              # however, when there are many widgets,
+              # this might lead to significant performance issue.
+              # the main reason is because for now every value change leads to a rerendering
+              # of the whole form.
+              # we will have to refactor the whole form design about rendering to improve this.
+              if !cfg.itf => return
+              cfg.bi.transform \i18n
+              cfg.itf.render!
 
       opt = {} <<< (viewcfg.common or {}) <<< {
         init-render: false
