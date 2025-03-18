@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.0
+
+ - support `lng` ld selector for togglging block based on lng. requires `@plotdb/block` > v5.5.3
+
+
 ## v0.1.2
 
  - fix bug: i18n doesn't work. fields transforming and rendering are still required

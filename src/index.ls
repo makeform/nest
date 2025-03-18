@@ -12,7 +12,7 @@ module.exports =
     # we may consider adding `widget.inited` event in @makeform/base
     opt.pubsub.fire \subinit, mod: mod(opt)
 
-mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
+mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
   {ldview, form} = ctx
   obj =
     data:
@@ -153,6 +153,11 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
               if obj.display != \active => return
               node.classList.toggle \d-none, (ctx.key != obj.active-key)
 
+            lng: ({node}) ~>
+              node.classList.toggle \d-none, !(
+                i18n.language.startsWith(node.dataset.lng) or
+                i18n.language.startsWith("#{node.dataset.lng}-")
+              )
             visibility: ({node, ctx}) ~>
               name = node.getAttribute \data-name
               node.classList.toggle \d-none, false
@@ -206,6 +211,7 @@ mod = ({root, ctx, data, parent, t, manager, pubsub}) ->
       if !obj.fields => return
       obj.view = new ldview _viewcfg obj.viewcfg
       <~ obj.view.init!then _
+      i18n.on \languageChanged, -> obj.view.render \lng
       obj.view.render!
 
     obj.init!
