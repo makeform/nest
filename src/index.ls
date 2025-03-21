@@ -15,11 +15,18 @@ module.exports =
 mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
   {ldview, form} = ctx
   obj =
+    host: {}
     data:
       list: []  # for list mode
       object: {} # for object mode
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
+
+  _adapt = (itf) ->
+    itf.adapt({} <<< obj.host <<< {
+      upload: ({file, progress, alias}) ~>
+        obj.host.upload({file, progress, alias: alias or name})
+    })
 
   pubsub.on \init.nest, ({init, mode, display, fields, conditions, view, onchange, validate, instance}) ~>
     obj.mode = mode or \list
@@ -137,10 +144,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   cfg <<< {itf: o.interface, bi: o.instance, root: node}
                   # this is for cond
                   entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
-                  o.interface.adapt({} <<< obj.host <<< {
-                    upload: ({file, progress, alias}) ~>
-                      obj.host.upload({file, progress, alias: alias or name})
-                  })
+                  _adapt o.interface
                   entry.formmgr.add {widget: cfg.itf, path: name}
                   cfg.itf.mode entry.formmgr.mode!
                   entry.block[name].inited = true
@@ -260,7 +264,10 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             if count.1 => return {status: 3, errors: []}
             return []
 
-  adapt: -> obj.host = it
+  adapt: (host) ->
+    obj.host = host
+    for key,entry of obj.entry => for name, field of entry.fields => _adapt field.itf
+
   manager: (cb) ->
     ret = [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
     for k,v of obj.entry => for g,u of v.block =>

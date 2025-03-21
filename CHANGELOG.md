@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.1
+
+ - fix bug: adapt api doesn't recursively call widget's adapt api
+
+
 ## v0.2.0
 
  - support `lng` ld selector for togglging block based on lng. requires `@plotdb/block` > v5.5.3
