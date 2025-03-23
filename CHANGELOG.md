@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.2
+
+ - fix bug: ensure interface existence before calling adapt
+
+
 ## v0.2.1
 
  - fix bug: adapt api doesn't recursively call widget's adapt api

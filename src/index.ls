@@ -23,6 +23,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     entry: {} # for non-serializable objects associated with entries in data.list by key
 
   _adapt = (itf) ->
+    if !(itf and itf.adapt) => return
     itf.adapt({} <<< obj.host <<< {
       upload: ({file, progress, alias}) ~>
         obj.host.upload({file, progress, alias: alias or name})
@@ -266,7 +267,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
   adapt: (host) ->
     obj.host = host
-    for key,entry of obj.entry => for name, field of entry.fields => _adapt field.itf
+    for key,entry of obj.entry => for name, field of entry.fields => if field.itf => _adapt field.itf
 
   manager: (cb) ->
     ret = [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
