@@ -67,7 +67,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
 
     _viewcfg = (viewcfg) ~>
-      update = ~> @value(if obj.mode == \list => obj.data{list} else obj.data{object})
+      update = ~> @value((if obj.mode == \list => obj.data{list} else obj.data{object}), {from-source: true})
       handler =
         add: ->
           list = obj.data.list

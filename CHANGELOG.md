@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.3
+
+ - update widget value with `fromSource` flag to prevent massive update with any editing.
+
+
 ## v0.2.2
 
  - fix bug: ensure interface existence before calling adapt
