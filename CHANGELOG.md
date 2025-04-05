@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.5 (upcoming)
+
+ - add `lng` Pug mixin support
+
+
 ## v0.2.4
 
  - fix bug: `fromSource` causes parent nest unsync with its widgets. replace `fromSource` with `sig` mechanism.
