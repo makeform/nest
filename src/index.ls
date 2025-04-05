@@ -44,9 +44,26 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       .then -> if init => init obj
 
   init: ->
+    # we use sig to let `@on 'change'` below know if the event is from internal value update.
+    # because we don't need rerender for internal value update
+    # so why do we still fire change event? because we need it to notify parent that values are changed.
+    # parent nest widget relys on widget's change event to update value, so it's necessary.
+    # NOTE thus - we should always regen sig if we update value,
+    # otherwise remote value may not be updated correctly.
+    # we may consider redesign how `value` works by recursively fetching value from widgets everytime
+    # which eliminate the need to update value completely.
+    same-sig = (d) ->
+      token = ((obj.data or {}).sig or {}).token
+      return token and (d.sig or {}).token == token
+    resig = ->
+      sig = obj.data.{}sig
+      sig <<< count: sig.count or 0, ts: Date.now!
+      sig.token = "#{Math.random!toString(36)substring(2)}-#{sig.ts}-#{sig.count}"
+
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
     @on \change, (d = {}) ->
-      obj.data = d or {} 
+      if same-sig(d) => return
+      obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
         keys = obj.data.list.map -> it.key
@@ -67,7 +84,10 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
 
     _viewcfg = (viewcfg) ~>
-      update = ~> @value((if obj.mode == \list => obj.data{list} else obj.data{object}), {from-source: true})
+      update = ~>
+        # be sure to call `resig` for every @value update
+        resig!
+        @value((if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}))
       handler =
         add: ->
           list = obj.data.list

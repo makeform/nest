@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.4
+
+ - fix bug: `fromSource` causes parent nest unsync with its widgets. replace `fromSource` with `sig` mechanism.
+
+
 ## v0.2.3
 
  - update widget value with `fromSource` flag to prevent massive update with any editing.
