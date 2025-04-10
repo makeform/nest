@@ -1,8 +1,11 @@
 # Change Logs
 
-## v0.2.5 (upcoming)
+## v0.2.5
 
  - add `lng` Pug mixin support
+ - add `isVisible` and `isEnabled` in cond api
+ - add `subcond` api for recursively run condition controller
+ - add `active` api to directly
 
 
 ## v0.2.4
