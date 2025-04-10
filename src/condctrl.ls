@@ -3,7 +3,18 @@ condctrl = (opt = {}) ->
   @
 
 condctrl.prototype = Object.create(Object.prototype) <<<
+  # we now consider visible as enabled. this may be separated in the future, if necessary.
+  is-visible: -> @_visibility[it]
+  is-enabled: -> @_visibility[it]
   get: (id) -> @_hash[id]
+  subcond: ({target, config, active}) ->
+    itf = @_fields[target].itf
+    if !(itf and itf.ctrl and (ret = itf.ctrl!) and (conds = ret.condctrl!)) => return
+    for k, cond of conds =>
+      cond.apply {active} <<< config
+      # cond is changed, which may trigger a chain reaction, so we should rerun cond.run.
+      # TODO we may want to batch this call since it may be run multiple times.
+      cond.run!
   init: (opt = {}) ->
     @_fields = opt.fields or @_fields or {}
     for k,v of @_fields =>
@@ -19,6 +30,7 @@ condctrl.prototype = Object.create(Object.prototype) <<<
         if cfg.enabled => cfg <<< {disabled: false, is-required}
         else if cfg.enabled? => cfg <<< {disabled: true, is-required: !is-required}
         cfg.source = cond.src
+        cfg.func = cond.func
         cfg.targets = Array.from(new Set(
           (if cfg.prefix => cfg.prefix else []) ++
           (cfg.targets or []) ++
@@ -31,31 +43,52 @@ condctrl.prototype = Object.create(Object.prototype) <<<
         ))
 
   apply: (opt = {}) ->
-    {widget, active, disabled, is-required, readonly} = opt
-    cur-meta = widget.serialize!
-    new-meta = JSON.parse(JSON.stringify(cur-meta))
-    if disabled? => new-meta.disabled = !(disabled xor active)
-    if readonly? => new-meta.readonly = !(readonly xor active)
-    if is-required? => new-meta.is-required = !(is-required xor active)
-    if !!cur-meta.disabled == !!new-meta.disabled and
-       !!cur-meta.is-required == !!new-meta.is-required and
-       !!cur-meta.readonly == !!new-meta.readonly => return
-    widget.deserialize new-meta, {init: true}
+    {target, active, enabled, disabled, is-required, readonly} = opt
+    if disabled? => @_visibility[target] = !!(disabled xor active)
+    if (@_fields[target] and (widget = @_fields[target].itf)) =>
+      cur-meta = widget.serialize!
+      new-meta = JSON.parse(JSON.stringify(cur-meta))
+      if disabled? => new-meta.disabled = !(disabled xor active)
+      if readonly? => new-meta.readonly = !(readonly xor active)
+      if is-required? => new-meta.is-required = !(is-required xor active)
+      if !!cur-meta.disabled == !!new-meta.disabled and
+         !!cur-meta.is-required == !!new-meta.is-required and
+         !!cur-meta.readonly == !!new-meta.readonly => return
+      widget.deserialize new-meta, {init: true}
+    if !(Array.isArray(target) and target.1) => return
+    @subcond {
+      target: target.0
+      config: {target: config.target.slice(1), enabled, disabled, is-required, readonly},
+      active: active
+    }
 
   # targets is required/visible(based on `is-required` and `visible` field) only if name = val
-  _run: ({source, values, targets, is-required, disabled, readonly}, precond) ->
-    if !(@_fields[source] and itf = @_fields[source].itf) =>
-      console.error "[nest/condctrl] try to execute a condition with nonexisted fields '#source'"
-      return
-    content = itf.content!
-    content = if Array.isArray(content) => content else [content]
-    active = !!content.filter((c) -> if Array.isArray(values) => (c in values) else (c == values)).length
-    if precond? and !precond => active = false
-    for tgt in targets =>
-      if disabled? => @_visibility[tgt] = !!(disabled xor active)
-      if !(@_fields[tgt] and (widget = @_fields[tgt].itf)) => continue
-      @apply {widget, active, disabled, is-required, readonly}
-    return active
+  _run: (cfg = {}, precond) ->
+    {source, values, targets, is-required, enabled, disabled, readonly, func} = cfg
+    if func =>
+      result = true
+      for tgt in targets =>
+        active = !!(func.apply @, [{} <<< cfg <<< {target: tgt}]) and !(precond? and !precond)
+        result = result and active
+        if Array.isArray(tgt) and tgt.1 =>
+          @subcond {target: tgt.0, config: {} <<< cfg <<< {target: tgt.slice(1)}, active}
+          continue
+        @apply {target: tgt, enabled, active, disabled, is-required, readonly}
+    else
+      if !(@_fields[source] and itf = @_fields[source].itf) =>
+        console.error "[nest/condctrl] try to execute a condition with nonexisted fields '#source'"
+        return
+      content = itf.content!
+      content = if Array.isArray(content) => content else [content]
+      active = !!content.filter((c) -> if Array.isArray(values) => (c in values) else (c == values)).length
+      if precond? and !precond => active = false
+      for tgt in targets =>
+        if Array.isArray(tgt) and tgt.1 =>
+          @subcond {target: tgt.0, config: {} <<< cfg <<< {target: tgt.slice(1)}, active}
+          continue
+        @apply {target: tgt, enabled, active, disabled, is-required, readonly}
+      result = active
+    return result
 
   run: ->
     result = {}

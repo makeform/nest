@@ -21,6 +21,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       object: {} # for object mode
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
+    subcond: ({field, key}) -> if !key => [v.subcond for k,v of @entry].filter(->it)
 
   _adapt = (itf) ->
     if !(itf and itf.adapt) => return
@@ -110,6 +111,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           init:
             "@": ({ctx, views}) ~>
               # cond use itf from fields. yet obj.fields is shared. so we dup it here.
+              # ctx.key for object mode will be undefined.
               obj.entry[ctx.key] =
                 fields: {}
                 block: {}
@@ -172,6 +174,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   entry.block[name].init.resolve true
                   if o.interface.manager!length => @fire \manager.changed
                   o.interface.on \manager.changed, ~> @fire \manager.changed
+                  if !(o.interface.ctrl and (ret = o.interface.ctrl!) and ret.condctrl) => return
+                  entry.subcond = ret.condctrl
                 .catch (e) -> return Promise.reject(e)
           handler:
             "@": ({node, ctx}) ~>
@@ -209,6 +213,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       opt = {} <<< (viewcfg.common or {}) <<< {
         init-render: false
         root: root
+        # this may lead to name collision of `key` and fields named `key` in object mode.
+        # since only `ctx.key` is used above we may consider using `{}` instead.
         ctx: -> obj.data.object
       }
 
@@ -298,3 +304,4 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     toggle: (o = {}) ~>
       if o.key => obj.active-key = o.key
       obj.view.render!
+    condctrl: -> return Object.fromEntries [[k,v.cond] for k,v of obj.entry]
