@@ -30,7 +30,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         obj.host.upload({file, progress, alias: alias or name})
     })
 
-  pubsub.on \init.nest, ({init, mode, display, fields, conditions, view, onchange, validate, instance}) ~>
+  pubsub.on \init.nest, ({init, mode, display, fields, conditions, view, onchange, validate, instance, autofill}) ~>
     obj.mode = mode or \list
     obj.display = display or \all # active or all
     obj.fields = fields
@@ -39,10 +39,11 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     obj.onchange = onchange
     obj.validate = validate
     obj.instance = instance
+    obj.autofill = autofill
     # obj.init should be available since obj.init will be prepared synchronously in init below.
     Promise.resolve!
-      .then -> if obj.init => obj.init!
-      .then -> if init => init obj
+      .then -> obj.init!
+      .then (ctx) -> if init => init.apply obj._ctx, [obj]
 
   init: ->
     # we use sig to let `@on 'change'` below know if the event is from internal value update.
@@ -192,6 +193,13 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               node.classList.toggle \d-none, false
               vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
               node.classList.toggle \d-none, (vis? and !vis)
+            autofill: ({node, views, ctx}) ~>
+              name = node.dataset.name
+              cfg = (((obj.entry[ctx.key] or {}).block or {})[name] or {}).cfg or {}
+              if cfg and cfg.itf =>
+                if !cfg.autofill => cfg.itf.on \change, (cfg.autofill = -> views.0.render \autofill)
+                node.textContent = cfg.itf.content!
+              else if @autofill? => node.textContent = @autofill {name}
 
             block: ({node, ctxs, ctx}) ~>
               name = node.getAttribute(\data-name)
@@ -238,12 +246,14 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     obj.init = proxise.once ~>
       if obj.inited => return
+      obj._ctx = @
       obj.inited = true
       if !obj.fields => return
       obj.view = new ldview _viewcfg obj.viewcfg
       <~ obj.view.init!then _
       i18n.on \languageChanged, -> obj.view.render \lng
       obj.view.render!
+      return @
 
     obj.init!
 

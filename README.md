@@ -4,6 +4,7 @@ a nested widget without UI meant to be extend by the actual widget designed by u
 
 init with pubsub event `init.nest` with following fields:
 
+ - `init(obj)`: custom init function. See `Custom Init` section below.
  - `mode`: either `list` or `object`. default `list`.
  - `display`: either `active` or `all`. default `all`. Only applicable under `list` mode.
    - use to control whether to show all entries in the list, or only active one.
@@ -147,6 +148,19 @@ A sample rule object that refers to some nested fields:
 Since a parent widget can receive notifications when its nested fields change, it's possible to define a rule object in the parent that reacts to changes in its children - effectively enabling bottom-up conditional control.
 
 However, referencing nested fields using an array of strings in the src field is not currently supported. This feature is planned for a future update.
+
+
+## Custom Init
+
+The `init` function that is sent into `init.nest` will be called after `@makeform/nest` is inited with the widget object as `this` and internal `obj` passed as parameter, which contains following fields:
+
+ - `activeKey`: key of the active tab, if widget is tab-based.
+ - `entry`: an object storing each entry of this widget
+   - in list mode, the entry key will be used as its key in this object
+   - in object mode, check `active-key` for its key in `entry`.
+ - `fields`: fields meta provided by child block.
+
+Except fields list above, please consider all other fields as internal and prevent using them.
 
 
 ## License

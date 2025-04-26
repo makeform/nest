@@ -1,5 +1,11 @@
 # Change Logs
 
+## v0.2.6 (upcoming)
+
+ - add `autofill` ld selector
+ - call child init with internal `obj` in widget context.
+
+
 ## v0.2.5
 
  - add `lng` Pug mixin support
