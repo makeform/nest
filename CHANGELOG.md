@@ -1,6 +1,6 @@
 # Change Logs
 
-## v0.2.6 (upcoming)
+## v0.2.6
 
  - add `autofill` ld selector
  - call child init with internal `obj` in widget context.
