@@ -5,6 +5,7 @@ a nested widget without UI meant to be extend by the actual widget designed by u
 init with pubsub event `init.nest` with following fields:
 
  - `init(obj)`: custom init function. See `Custom Init` section below.
+ - `adapt(host)`: custom adapt function.
  - `mode`: either `list` or `object`. default `list`.
  - `display`: either `active` or `all`. default `all`. Only applicable under `list` mode.
    - use to control whether to show all entries in the list, or only active one.

@@ -30,20 +30,15 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         obj.host.upload({file, progress, alias: alias or name})
     })
 
-  pubsub.on \init.nest, ({init, mode, display, fields, conditions, view, onchange, validate, instance, autofill}) ~>
-    obj.mode = mode or \list
-    obj.display = display or \all # active or all
-    obj.fields = fields
-    obj.conditions = conditions
-    obj.viewcfg = view or {}
-    obj.onchange = onchange
-    obj.validate = validate
-    obj.instance = instance
-    obj.autofill = autofill
+  pubsub.on \init.nest, (opt = {}) ~>
+    obj <<< opt{fields, conditions, onchange, validate, instance, autofill, adapt}
+    obj.mode = opt.mode or \list
+    obj.display = opt.display or \all # active or all
+    obj.viewcfg = opt.view or {}
     # obj.init should be available since obj.init will be prepared synchronously in init below.
     Promise.resolve!
       .then -> obj.init!
-      .then (ctx) -> if init => init.apply obj._ctx, [obj]
+      .then (ctx) -> if opt.init => opt.init.apply obj._ctx, [obj]
 
   init: ->
     # we use sig to let `@on 'change'` below know if the event is from internal value update.
@@ -303,6 +298,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
   adapt: (host) ->
     obj.host = host
+    if obj.adapt => obj.adapt host
     for key,entry of obj.entry => for name, field of entry.fields => if field.itf => _adapt field.itf
 
   manager: (cb) ->

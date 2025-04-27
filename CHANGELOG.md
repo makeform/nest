@@ -1,5 +1,11 @@
 # Change Logs
 
+## v0.2.7
+
+ - refactor `init.nest` function
+ - support `adapt` api
+
+
 ## v0.2.6
 
  - add `autofill` ld selector
