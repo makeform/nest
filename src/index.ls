@@ -282,11 +282,12 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               .then (r) ->
                 o.status = if r.length => 2
                 else if is-init or (check-ws and check-ws.length < ws.length) => 1
+                else if (check-ws or []).filter(->it.widget.status! == 3).length => 3
                 else 0
                 return o
     Promise.all ps
       .then (rs) ~>
-        count = [0,0,0]
+        count = [0,0,0,0]
         rs.forEach (o) -> count[o.status]++
         if count.2 => return ["nested"]
         Promise.resolve!
@@ -295,8 +296,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             obj.validate opt, obj
           .then (ret) ->
             if ret => return that
-            # some fields are not touched. thus, this widget is editing
-            if count.1 => return {status: 3, errors: []}
+            # some fields are not touched or editing, thus this widget is editing
+            if count.1 or count.3 => return {status: 3, errors: []}
             return []
 
   adapt: (host) ->

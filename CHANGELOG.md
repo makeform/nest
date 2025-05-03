@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.9
+
+ - fix bug: validate doesn't correctly reflect status 3 from child widgets
+
+
 ## v0.2.8
 
  - fix bug: ensure obj.data.object availability
