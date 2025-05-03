@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.2.8
+
+ - fix bug: ensure obj.data.object availability
+
+
 ## v0.2.7
 
  - refactor `init.nest` function

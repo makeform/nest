@@ -74,6 +74,9 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             .then -> obj.entry[e.key].formmgr.value e.value
             .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[e.key].formmgr}
       else
+        # if data of this field were from some other fields, it may not contain data.object.
+        # thus we must make sure it exist.
+        obj.data.{}object
         key = undefined
         ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
         Promise.all ps
@@ -135,7 +138,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   if !(ret = obj.data.list.filter(-> it.key == ctx.key).0) => return
                   ret.value = JSON.parse(JSON.stringify(fmgr.value!))
                 else
-                  obj.data.object = JSON.parse(JSON.stringify(fmgr.value!))
+                  obj.data.object = JSON.parse(JSON.stringify(fmgr.value!)) or {}
                 update!
               @fire \manager.changed
               if obj.instance and obj.instance.transform => obj.instance.transform \i18n
@@ -218,7 +221,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         root: root
         # this may lead to name collision of `key` and fields named `key` in object mode.
         # since only `ctx.key` is used above we may consider using `{}` instead.
-        ctx: -> obj.data.object
+        ctx: -> obj.data.object or {}
       }
 
       # for list mode
