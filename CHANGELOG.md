@@ -1,6 +1,6 @@
 # Change Logs
 
-## v0.3.0 (upcoming)
+## v0.3.0
 
  - `is-required` now won't be affected by `enabled` flag
  - propagate readonly into sub-fields
