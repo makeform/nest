@@ -104,7 +104,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         # be sure to call `resig` for every @value update
         resig!
         @value((if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}))
-      handler =
+      action-click =
         add: ->
           list = obj.data.list
           list.push {value: {}, key: Math.random!toString(36).substring(2), idx: list.length + 1}
@@ -121,6 +121,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           delete obj.entry[ctx.key]
           update!
           obj.view.render!
+      handler =
+        add: ({node, ctx}) ~> node.style.display = if (@mode! == \view) => \none else ''
         "no-entry": ({node}) ~> node.classList.toggle \d-none, @content!length
         entry:
           init:
@@ -193,6 +195,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   entry.subcond = ret.condctrl
                 .catch (e) -> return Promise.reject(e)
           handler:
+            delete: ({node, ctx}) ~> node.style.display = if (@mode! == \view) => \none else ''
             "@": ({node, ctx}) ~>
               if obj.display != \active => return
               node.classList.toggle \d-none, (ctx.key != obj.active-key)
@@ -242,14 +245,15 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
       # for list mode
       if obj.mode == \list =>
-        opt.{}action.{}click.add = handler.add
+        opt.{}action.{}click.add = action-click.add
         opt.{}handler["no-entry"] = handler["no-entry"]
+        opt.{}handler.add = handler.add
         opt.{}handler.entry =
           list: -> obj.data.list or []
           key: -> it.key
           view: {} <<< (viewcfg.entry or {})
         opt.handler.entry.view
-          ..{}action.{}click.delete = handler.delete
+          ..{}action.{}click.delete = action-click.delete
           ..{}init <<< handler.entry.init
           ..{}handler <<< handler.entry.handler
       else

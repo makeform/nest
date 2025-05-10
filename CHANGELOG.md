@@ -4,6 +4,7 @@
 
  - `is-required` now won't be affected by `enabled` flag
  - propagate readonly into sub-fields
+ - hide `add` and `delete` buttons in view mode from code
 
 
 ## v0.2.9
