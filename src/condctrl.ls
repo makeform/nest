@@ -26,9 +26,14 @@ condctrl.prototype = Object.create(Object.prototype) <<<
       @_hash[cond.id] = cond
       if !Array.isArray(cond.config) => cond.config = [cond.config]
       cond.config.map (cfg) ~>
-        is-required = if cfg.is-required? and !cfg.is-required => false else true
-        if cfg.enabled => cfg <<< {disabled: false, is-required}
-        else if cfg.enabled? => cfg <<< {disabled: true, is-required: !is-required}
+        # we used to toggle `is-required` along with `enabled`,
+        # yet this isn't a best practice and is error-prone due to negligence.
+        # thus, we decide to remove this before `@makeform/nest` is widely adopted.
+        #is-required = if cfg.is-required? and !cfg.is-required => false else true
+        #if cfg.enabled => cfg <<< {disabled: false, is-required}
+        #else if cfg.enabled? => cfg <<< {disabled: true, is-required: !is-required}
+        if cfg.enabled => cfg <<< {disabled: false}
+        else if cfg.enabled? => cfg <<< {disabled: true}
         cfg.source = cond.src
         cfg.func = cond.func
         cfg.targets = Array.from(new Set(
