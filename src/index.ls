@@ -70,8 +70,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           f.meta.readonly = if lc.meta.readonly => lc.meta.readonly else lc.readonlys[k][n]
           if f.itf => f.itf.deserialize f.meta
 
-    #@on \meta, (m) ~> remeta @serialize!
-    #remeta data
+    @on \meta, (m) ~> remeta @serialize!
+    remeta data
 
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
     @on \change, (d = {}) ->
