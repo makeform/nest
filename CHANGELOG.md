@@ -1,5 +1,11 @@
 # Change Logs
 
+## v0.3.0 (upcoming)
+
+ - `is-required` now won't be affected by `enabled` flag
+ - propagate readonly into sub-fields
+
+
 ## v0.2.9
 
  - fix bug: validate doesn't correctly reflect status 3 from child widgets
