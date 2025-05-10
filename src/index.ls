@@ -57,6 +57,22 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       sig <<< count: sig.count or 0, ts: Date.now!
       sig.token = "#{Math.random!toString(36)substring(2)}-#{sig.ts}-#{sig.count}"
 
+    # from htc-viveland-2025. however, we need to cache the original readonly value,
+    # and take into account the effects of the conditions
+    lc = meta: {}, readonlys: {}, readonly: undefined
+    remeta = (meta) ->
+      lc.meta = meta
+      if lc.readonly == !!lc.meta.readonly => return
+      lc.readonly = !!lc.meta.readonly
+      for k,v of obj.entry =>
+        for n, f of v.fields =>
+          if !(lc.readonlys[k] or {})[n]? => lc.readonlys{}[k][n] = !!f.meta.readonly
+          f.meta.readonly = if lc.meta.readonly => lc.meta.readonly else lc.readonlys[k][n]
+          if f.itf => f.itf.deserialize f.meta
+
+    #@on \meta, (m) ~> remeta @serialize!
+    #remeta data
+
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
     @on \change, (d = {}) ->
       if same-sig(d) => return
