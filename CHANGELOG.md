@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.1
+
+ - add `fill` mixin in `mixin.pug` for auto filling content
+
+
 ## v0.3.0
 
  - `is-required` now won't be affected by `enabled` flag
