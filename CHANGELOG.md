@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.2
+
+ - optimize recursive rendering by bookkeeping a dirty list
+
+
 ## v0.3.1
 
  - add `fill` mixin in `mixin.pug` for auto filling content

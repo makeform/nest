@@ -144,9 +144,14 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                 if !obj.entry[ctx.key] => return
                 obj.entry[ctx.key].cond.run!
                 views.0.render!
-              fmgr.on \change, ->
+              fmgr.on \change, (info) ->
                 if !obj.entry[ctx.key] => return
                 obj.entry[ctx.key].cond.run!
+                # dirty: record changed paths to ensure minimal rendering.
+                # when render with dirty items: only render those in dirty set.
+                # otherwise render everything.
+                if !obj.entry[ctx.key].dirty => obj.entry[ctx.key].dirty = new Set!
+                if info and info.path => obj.entry[ctx.key].dirty.add info.path
                 views.0.render!
 
                 if obj.mode == \list =>
@@ -232,6 +237,9 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               # of the whole form.
               # we will have to refactor the whole form design about rendering to improve this.
               if !cfg.itf => return
+              if (dirty = obj.entry[ctx.key].dirty) and dirty.size =>
+                if dirty.has name => dirty.delete name
+                return
               cfg.bi.transform \i18n
               cfg.itf.render!
 
