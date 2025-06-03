@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.3
+
+ - fix bug: exception when condctrl is used along with widgets without meta.
+
+
 ## v0.3.2
 
  - optimize recursive rendering by bookkeeping a dirty list

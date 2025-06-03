@@ -18,7 +18,7 @@ condctrl.prototype = Object.create(Object.prototype) <<<
   init: (opt = {}) ->
     @_fields = opt.fields or @_fields or {}
     for k,v of @_fields =>
-      if !v.meta.condition => continue
+      if !(v.meta or {}).condition => continue
       @list.splice 0, 0, {src: k, config: v.meta.condition}
     for i from 0 til @list.length =>
       cond = @list[i]
