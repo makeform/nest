@@ -164,6 +164,23 @@ The `init` function that is sent into `init.nest` will be called after `@makefor
 Except fields list above, please consider all other fields as internal and prevent using them.
 
 
+## `condctrl` Constructor
+
+condctrl is used to dynamically change widget configuration based on current user input. Usage:
+
+    cc = new condctrl({ conditions, fields, baseRule })
+
+Constructor parameters:
+
+ - `conditions`: An array of conditional rule objects.
+ - `fields`: A key-value object of field definitions.
+ - `baseRule`: (optional) a function to make a final change before conditions are applied. options:
+   - `target`: target (path) name
+   - `widget`: widget of the current target.
+   - `meta`: meta of the current target.
+   - `opt`: options when `apply` is called.
+
+
 ## License
 
 MIT License

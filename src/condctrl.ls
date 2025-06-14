@@ -1,5 +1,10 @@
 condctrl = (opt = {}) ->
-  @ <<< _hash: {}, _visibility: {}, _fields: (opt.fields or {}), list: opt.conditions or []
+  @ <<<
+    _hash: {}
+    _visibility: {}
+    _fields: (opt.fields or {})
+    _list: opt.conditions or []
+    _apply-base-rule: opt.base-rule or (->)
   @
 
 condctrl.prototype = Object.create(Object.prototype) <<<
@@ -17,11 +22,12 @@ condctrl.prototype = Object.create(Object.prototype) <<<
       cond.run!
   init: (opt = {}) ->
     @_fields = opt.fields or @_fields or {}
+    @_list = opt.conditions or @_list or []
     for k,v of @_fields =>
       if !(v.meta or {}).condition => continue
-      @list.splice 0, 0, {src: k, config: v.meta.condition}
-    for i from 0 til @list.length =>
-      cond = @list[i]
+      @_list.splice 0, 0, {src: k, config: v.meta.condition}
+    for i from 0 til @_list.length =>
+      cond = @_list[i]
       if !cond.id => cond.id = "#{(i + 1)}"
       @_hash[cond.id] = cond
       if !Array.isArray(cond.config) => cond.config = [cond.config]
@@ -56,6 +62,7 @@ condctrl.prototype = Object.create(Object.prototype) <<<
       if disabled? => new-meta.disabled = !(disabled xor active)
       if readonly? => new-meta.readonly = !(readonly xor active)
       if is-required? => new-meta.is-required = !(is-required xor active)
+      @_apply-base-rule {target, widget, meta: new-meta, opt}
       if !!cur-meta.disabled == !!new-meta.disabled and
          !!cur-meta.is-required == !!new-meta.is-required and
          !!cur-meta.readonly == !!new-meta.readonly => return
@@ -98,7 +105,13 @@ condctrl.prototype = Object.create(Object.prototype) <<<
   run: ->
     result = {}
     _ = ~>
-      if !arguments.length => list = @list
+      if @list =>
+        console.error "[@makeform/nest] access `condctrl.list` is deprecated."
+        console.error "[@makeform/nest] set `conditions` when contructing or initing instead."
+      # @list: it seems that some old script write @list directly,
+      # so we keep it here to enusre active open-calls works correctly.
+      # should be fine to remove after some time, since open-calls usually won't last long.
+      if !arguments.length => list = @list or @_list
       else list = Array.from(arguments)
       for i from 0 til list.length =>
         cond = list[i]

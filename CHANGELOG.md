@@ -1,5 +1,15 @@
 # Change Logs
 
+## v0.3.4
+
+ - fix bug: parent readonly attribute didn't correctly reflect in child widets
+ - fix bug: user can still add / remove should not be able to readonly
+ - ensure pareny readonly attribute works even with child conditions
+ - tweak condctrl code naming and api interface
+ - add `baseRule` option in condctrl for overwriting conditions
+ - add document about condctrl
+
+
 ## v0.3.3
 
  - fix bug: exception when condctrl is used along with widgets without meta.

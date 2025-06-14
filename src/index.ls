@@ -59,16 +59,31 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     # from htc-viveland-2025. however, we need to cache the original readonly value,
     # and take into account the effects of the conditions
-    lc = meta: {}, readonlys: {}, readonly: undefined
+    lc =
+      meta: {}
+      # readonlys[entry key][field name]:
+      #   original readonly value for widget <field name> in <entry key>
+      readonlys: {}
+      # use to store last value of readonly
+      # since we still control some edit functions
+      # we can use this to decide whether to accept update or not
+      readonly: undefined
+
     remeta = (meta) ->
-      lc.meta = meta
-      if lc.readonly == !!lc.meta.readonly => return
+      lc.meta = JSON.parse(JSON.stringify(meta))
+      if lc.readonly == lc.meta.readonly => return
       lc.readonly = !!lc.meta.readonly
       for k,v of obj.entry =>
         for n, f of v.fields =>
+          if !(itf = v.block[n].cfg.itf) => continue
           if !(lc.readonlys[k] or {})[n]? => lc.readonlys{}[k][n] = !!f.meta.readonly
-          f.meta.readonly = if lc.meta.readonly => lc.meta.readonly else lc.readonlys[k][n]
-          if f.itf => f.itf.deserialize f.meta
+          # field should always be readonly if widget is readonly.
+          nv = if lc.readonly => lc.readonly else lc.readonlys[k][n]
+          m = itf.serialize!
+          # don't deserialize if no change to optimize performance.
+          if m.readonly == nv => continue
+          m.readonly = nv
+          itf.deserialize m
 
     @on \meta, (m) ~> remeta @serialize!
     remeta data
@@ -106,6 +121,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         @value((if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}))
       action-click =
         add: ->
+          if lc.readonly => return
           list = obj.data.list
           list.push {value: {}, key: Math.random!toString(36).substring(2), idx: list.length + 1}
           update!
@@ -115,6 +131,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           # we may need a better way to handle this.
           if obj.instance and obj.instance.transform => obj.instance.transform \i18n
         delete: ({node, ctx, ctxs}) ->
+          if lc.readonly => return
           list = obj.data.list
           list.splice list.indexOf(ctx), 1
           list.map (d,i) -> d.idx = i + 1
@@ -122,7 +139,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           update!
           obj.view.render!
       handler =
-        add: ({node, ctx}) ~> node.style.display = if (@mode! == \view) => \none else ''
+        add: ({node, ctx}) ~> node.style.display = if (@mode! == \view or lc.readonly) => \none else ''
         "no-entry": ({node}) ~> node.classList.toggle \d-none, @content!length
         entry:
           init:
@@ -133,14 +150,16 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                 fields: {}
                 block: {}
                 formmgr: fmgr = new form.manager!
-                cond: new condctrl!
+                cond: new condctrl base-rule: ({meta}) -> if lc.readonly => meta.readonly = true
               for k,v of obj.fields => obj.entry[ctx.key].fields[k] = {} <<< v
 
-              obj.entry[ctx.key].cond.list = (obj.conditions or [])
-              obj.entry[ctx.key].cond.init {fields: obj.entry[ctx.key].fields}
+              obj.entry[ctx.key].cond.init {
+                fields: obj.entry[ctx.key].fields
+                conditions: obj.conditions or []
+              }
               fmgr.mode @mode!
               debounce 350 .then ->
-                # prevent exception caused byquick deletion
+                # prevent exception caused by quick deletion
                 if !obj.entry[ctx.key] => return
                 obj.entry[ctx.key].cond.run!
                 views.0.render!
@@ -184,9 +203,14 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               bdef = if typeof(cfg.type) == \object => cfg.type
               else if typeof(cfg.type) == \string => {name: cfg.type, version: \main}
               else {name: '@makeform/input', version: \main}
+              # ensure the init rendering align with config
+              if lc.readonly => cfg.meta.readonly = true
               manager.from bdef, {root: node, data: cfg.meta}
                 .then (o) ~>
                   cfg <<< {itf: o.interface, bi: o.instance, root: node}
+                  # again since remeta may be called before module loaded
+                  if lc.readonly => cfg.meta.readonly = true
+                  cfg.itf.deserialize cfg.meta
                   # this is for cond
                   entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
                   _adapt o.interface
@@ -200,7 +224,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   entry.subcond = ret.condctrl
                 .catch (e) -> return Promise.reject(e)
           handler:
-            delete: ({node, ctx}) ~> node.style.display = if (@mode! == \view) => \none else ''
+            delete: ({node, ctx}) ~> node.style.display = if (@mode! == \view or lc.readonly) => \none else ''
             "@": ({node, ctx}) ~>
               if obj.display != \active => return
               node.classList.toggle \d-none, (ctx.key != obj.active-key)
