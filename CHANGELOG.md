@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.6
+
+ - prevent empty yet not required fields from blocking widget status update
+
+
 ## v0.3.5
 
  - fix bug: meta fallback to `{}` in `remeta`, if not provided

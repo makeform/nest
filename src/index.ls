@@ -325,7 +325,15 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             ws = [v for k,v of o.block]
             check-ws = ws
               .filter ->
-                it.cfg.itf and (!it.cfg.itf.is-empty! or it.cfg.itf.status! == 2) and !it.cfg.itf.disabled!
+                it.cfg.itf and
+                (
+                  !it.cfg.itf.is-empty! or
+                  # consider not-required empty fields as mandatory to check
+                  # thus it won't prevent base widget from being considered finished
+                  (it.cfg.itf.is-empty! and !it.cfg.itf.is-required!) or
+                  it.cfg.itf.status! == 2
+                ) and
+                !it.cfg.itf.disabled!
               .map -> {widget: it.cfg.itf, path: it.path}
             if !check-ws.length and !opt.force =>
               o.status = 1
