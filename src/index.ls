@@ -67,9 +67,10 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       # use to store last value of readonly
       # since we still control some edit functions
       # we can use this to decide whether to accept update or not
+      # it can be true, false or undefined
       readonly: undefined
 
-    remeta = (meta) ->
+    remeta = (meta = {}) ->
       lc.meta = JSON.parse(JSON.stringify(meta))
       if lc.readonly == lc.meta.readonly => return
       lc.readonly = !!lc.meta.readonly

@@ -1,5 +1,11 @@
 # Change Logs
 
+## v0.3.5
+
+ - fix bug: meta fallback to `{}` in `remeta`, if not provided
+ - upgrade dependency
+
+
 ## v0.3.4
 
  - fix bug: parent readonly attribute didn't correctly reflect in child widets
