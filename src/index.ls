@@ -49,13 +49,30 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     # otherwise remote value may not be updated correctly.
     # we may consider redesign how `value` works by recursively fetching value from widgets everytime
     # which eliminate the need to update value completely.
-    same-sig = (d) ->
-      token = ((obj.data or {}).sig or {}).token
-      return token and (d.sig or {}).token == token
-    resig = ->
-      sig = obj.data.{}sig
-      sig <<< count: sig.count or 0, ts: Date.now!
-      sig.token = "#{Math.random!toString(36)substring(2)}-#{sig.ts}-#{sig.count}"
+
+    # Approach A: write a random sig token in data.
+    # this correctly works for distinguish update source yet it makes data becom dirty easily.
+    /*
+    sig =
+      same: (d) ->
+        token = ((obj.data or {}).sig or {}).token
+        return token and (d.sig or {}).token == token
+      renew: ->
+        sig = obj.data.{}sig
+        sig <<< count: sig.count or 0, ts: Date.now!
+        sig.token = "#{Math.random!toString(36)substring(2)}-#{sig.ts}-#{sig.count}"
+    clear: -> # do nothing, since sig token always be replaced when renew.
+    */
+    # Approach B: simply use a flag.
+    # there may be race condition between flag > update
+    # yet once a change event will be fired everytime when flag is on
+    # we can at least always cancel one flag. e.g.,
+    #  default scene : flag on > inner update(block) > flag down
+    #  race condition: flag on > outer update(block) > flag down > inner update
+    sig =
+      same: -> @internal
+      renew: -> @internal = true
+      clear: -> @internal = false
 
     # from htc-viveland-2025. however, we need to cache the original readonly value,
     # and take into account the effects of the conditions
@@ -91,7 +108,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
     @on \change, (d = {}) ->
-      if same-sig(d) => return
+      if sig.same(d) => return sig.clear!
       obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
@@ -117,9 +134,11 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     _viewcfg = (viewcfg) ~>
       update = ~>
-        # be sure to call `resig` for every @value update
-        resig!
-        @value((if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}))
+        sig.renew!
+        # obj.data{sig} is deprecated. here we still keep it's value. see sig object comments above.
+        v = if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}
+        if !v.sig => delete v.sig
+        @value v
       action-click =
         add: ->
           if lc.readonly => return
@@ -268,10 +287,10 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               if cfg.lng != i18n.language =>
                 cfg.bi.transform \i18n
                 cfg.lng = i18n.language
-              # TODO we suppose that widget should render themselves for meta / value update,
-              # thus re-render here is not necessary everytime;
-              # so we can consider call it along with i18n transform update first.
-              cfg.itf.render!
+                # we suppose widget should render themselves for meta/value update,
+                # thus re-render is not necessary everytime;
+                # so we move it inside language transform block.
+                cfg.itf.render!
 
       opt = {} <<< (viewcfg.common or {}) <<< {
         init-render: false

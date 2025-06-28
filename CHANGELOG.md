@@ -3,6 +3,8 @@
 ## v0.3.7 (upcoming)
 
  - transform for i18n in widget when rendering only if language is changed to optimize responsiveness.
+ - render widget along with i18n transformation to optimize rendering performance
+ - replace `sig` dynamics with a single flag.
 
 
 ## v0.3.6
