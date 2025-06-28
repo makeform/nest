@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.7 (upcoming)
+
+ - transform for i18n in widget when rendering only if language is changed to optimize responsiveness.
+
+
 ## v0.3.6
 
  - prevent empty yet not required fields from blocking widget status update

@@ -251,9 +251,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             block: ({node, ctxs, ctx}) ~>
               name = node.getAttribute(\data-name)
               cfg = (((obj.entry[ctx.key] or {}).block or {})[name] or {}).cfg or {}
-              node.classList.toggle \d-none, false
               vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
-
               node.classList.toggle \d-none, (vis? and !vis)
               # we should render subblock when this block is rendered.
               # however, when there are many widgets,
@@ -262,10 +260,17 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               # of the whole form.
               # we will have to refactor the whole form design about rendering to improve this.
               if !cfg.itf => return
+              # TODO this seems to not work since once we render more than once,
+              # widget still be rendered. consider remove this.
               if (dirty = obj.entry[ctx.key].dirty) and dirty.size =>
                 if dirty.has name => dirty.delete name
                 return
-              cfg.bi.transform \i18n
+              if cfg.lng != i18n.language =>
+                cfg.bi.transform \i18n
+                cfg.lng = i18n.language
+              # TODO we suppose that widget should render themselves for meta / value update,
+              # thus re-render here is not necessary everytime;
+              # so we can consider call it along with i18n transform update first.
               cfg.itf.render!
 
       opt = {} <<< (viewcfg.common or {}) <<< {
