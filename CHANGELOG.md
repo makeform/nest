@@ -1,6 +1,6 @@
 # Change Logs
 
-## v0.3.7 (upcoming)
+## v0.3.7
 
  - transform for i18n in widget when rendering only if language is changed to optimize responsiveness.
  - render widget along with i18n transformation to optimize rendering performance
