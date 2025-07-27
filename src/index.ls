@@ -30,7 +30,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         obj.host.upload({file, progress, alias: alias or name})
     })
 
-  pubsub.on \init.nest, (opt = {}) ~>
+  f = (opt = {}) ~>
+    console.log \here
     obj <<< opt{fields, conditions, onchange, validate, instance, autofill, adapt}
     obj.mode = opt.mode or \list
     obj.display = opt.display or \all # active or all
@@ -39,6 +40,10 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     Promise.resolve!
       .then -> obj.init!
       .then (ctx) -> if opt.init => opt.init.apply obj._ctx, [obj]
+
+  pubsub.on \@makeform/nest:init, f
+  # potential ambigious event name thus we deprecated it. use `@makeform/nest:init` instead
+  pubsub.on \init.nest, f
 
   init: ->
     # we use sig to let `@on 'change'` below know if the event is from internal value update.

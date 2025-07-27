@@ -2,7 +2,7 @@
 
 a nested widget without UI meant to be extend by the actual widget designed by user.
 
-init with pubsub event `init.nest` with following fields:
+init with pubsub event `@makeform/nest:init` (or deprecated `init.nest` event) with following fields:
 
  - `init(obj)`: custom init function. See `Custom Init` section below.
  - `adapt(host)`: custom adapt function.
@@ -47,10 +47,10 @@ Create your own block and extend this widget:
         module.exports = {
           pkg: {extend: {name: "@makeform/nest", dom: "overwrite"}}
           init: ({pubsub, parent, i18n}) ->
-            pubsub.fire("init.nest", obj)
+            pubsub.fire("@makeform/nest:init", obj)
         }
 
-Where `obj` fired along with the `init.nest` event to `@makeform/nest` via `pubsub` is described as above.
+Where `obj` fired along with the `@makeform/nest:init` event to `@makeform/nest` via `pubsub` is described as above.
 
 Note that you should overwrite `@makeform/nest`'s DOM and implement `widget` plug manually for ancestor `@makeform/common`.
 
@@ -86,7 +86,7 @@ Available mixins:
 
 ## Conditional Control Mechanism
 
-To support condition-based form behavior, we provide a *conditional control mechanism*, which is enabled by supplying the `conditions` field specified in the `init.nest` event mentioned above.
+To support condition-based form behavior, we provide a *conditional control mechanism*, which is enabled by supplying the `conditions` field specified in the `@makeform/nest:init` event mentioned above.
 
 The `conditions` field is an array of *conditional control definition objects* (also referred to as `rule object`), defined as below:
 
@@ -153,7 +153,7 @@ However, referencing nested fields using an array of strings in the src field is
 
 ## Custom Init
 
-The `init` function that is sent into `init.nest` will be called after `@makeform/nest` is inited with the widget object as `this` and internal `obj` passed as parameter, which contains following fields:
+The `init` function that is sent into `@makeform/nest:init` will be called after `@makeform/nest` is inited with the widget object as `this` and internal `obj` passed as parameter, which contains following fields:
 
  - `activeKey`: key of the active tab, if widget is tab-based.
  - `entry`: an object storing each entry of this widget

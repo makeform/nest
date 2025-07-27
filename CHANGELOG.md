@@ -5,6 +5,7 @@
  - transform for i18n in widget when rendering only if language is changed to optimize responsiveness.
  - render widget along with i18n transformation to optimize rendering performance
  - replace `sig` dynamics with a single flag.
+ - replace `init.nest` with `@makeform/nest:init` event
 
 
 ## v0.3.6
