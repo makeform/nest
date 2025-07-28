@@ -262,7 +262,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             visibility: ({node, ctx}) ~>
               name = node.getAttribute \data-name
               node.classList.toggle \d-none, false
-              vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
+              vis = (((obj.entry[ctx.key] or {}).cond or {})._visibility or {})[name]
               node.classList.toggle \d-none, (vis? and !vis)
             autofill: ({node, views, ctx}) ~>
               name = node.dataset.name
@@ -275,7 +275,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
             block: ({node, ctxs, ctx}) ~>
               name = node.getAttribute(\data-name)
               cfg = (((obj.entry[ctx.key] or {}).block or {})[name] or {}).cfg or {}
-              vis = (obj.entry[ctx.key] or {}).cond._visibility[name]
+              vis = (((obj.entry[ctx.key] or {}).cond or {})._visibility or {})[name]
               node.classList.toggle \d-none, (vis? and !vis)
               # we should render subblock when this block is rendered.
               # however, when there are many widgets,

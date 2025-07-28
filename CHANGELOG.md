@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.8
+
+ - prevent accessing of uninitialized cond and visibility object in block and visibility handler
+
+
 ## v0.3.7
 
  - transform for i18n in widget when rendering only if language is changed to optimize responsiveness.
