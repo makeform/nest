@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.10
+
+ - fix bug: typo when building key hash
+
+
 ## v0.3.9
 
  - fix bug: when updating values, entry objects will be deleted if new value contains some entries with the same key 

@@ -116,7 +116,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
-        keyhash = Object.fromEntries obj.data.list.map(->[it,true])
+        keyhash = Object.fromEntries obj.data.list.map(->[it.key,true])
         if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
         for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
         obj.view.render!
