@@ -31,7 +31,6 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     })
 
   f = (opt = {}) ~>
-    console.log \here
     obj <<< opt{fields, conditions, onchange, validate, instance, autofill, adapt}
     obj.mode = opt.mode or \list
     obj.display = opt.display or \all # active or all
@@ -117,9 +116,9 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
-        keys = obj.data.list.map -> it.key
-        if !obj.active-key => obj.active-key = keys.0
-        for k,v of obj.entry => if !(k in keys) => delete obj.entry[k]
+        keyhash = Object.fromEntries obj.data.list.map(->[it,true])
+        if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
+        for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
         obj.view.render!
         obj.data.list.map (e) ->
           if !obj.entry[e.key] => return

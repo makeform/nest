@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.9
+
+ - fix bug: when updating values, entry objects will be deleted if new value contains some entries with the same key 
+
+
 ## v0.3.8
 
  - prevent accessing of uninitialized cond and visibility object in block and visibility handler
