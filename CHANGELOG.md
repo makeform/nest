@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.11
+
+ - fix bug: deserialize when block initialization should be called with `init: true` to prevent premature validation
+
+
 ## v0.3.10
 
  - fix bug: typo when building key hash

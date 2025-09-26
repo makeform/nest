@@ -234,7 +234,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   cfg <<< {itf: o.interface, bi: o.instance, root: node}
                   # again since remeta may be called before module loaded
                   if lc.readonly => cfg.meta.readonly = true
-                  cfg.itf.deserialize cfg.meta
+                  cfg.itf.deserialize cfg.meta, {init: true}
                   # this is for cond
                   entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
                   _adapt o.interface
