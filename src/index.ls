@@ -218,7 +218,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                 console.warn "exception when parsing block data for field name `#name`."
                 throw e
               if !cfg.meta.title => cfg.meta.title = name
-              entry.block[name] = 
+              entry.block[name] =
                 cfg: cfg
                 path: name
                 inited: false
