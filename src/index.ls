@@ -91,7 +91,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       # it can be true, false or undefined
       readonly: undefined
 
-    remeta = (meta = {}) ->
+    remeta = (meta = {}, o = {}) ->
       lc.meta = JSON.parse(JSON.stringify(meta))
       if lc.readonly == lc.meta.readonly => return
       lc.readonly = !!lc.meta.readonly
@@ -105,9 +105,9 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           # don't deserialize if no change to optimize performance.
           if m.readonly == nv => continue
           m.readonly = nv
-          itf.deserialize m
+          itf.deserialize m, o
 
-    @on \meta, (m) ~> remeta @serialize!
+    @on \meta, (m, o) ~> remeta @serialize!, o
     remeta data
 
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m

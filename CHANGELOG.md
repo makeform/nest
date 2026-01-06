@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.12
+
+ - support meta event with additional option parameter
+
+
 ## v0.3.11
 
  - fix bug: deserialize when block initialization should be called with `init: true` to prevent premature validation
