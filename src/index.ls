@@ -31,7 +31,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     })
 
   f = (opt = {}) ~>
-    obj <<< opt{fields, conditions, onchange, validate, instance, autofill, adapt}
+    obj <<< opt{fields or {}, conditions, onchange, validate, instance, autofill, adapt, doctree, composing}
     obj.mode = opt.mode or \list
     obj.display = opt.display or \all # active or all
     obj.viewcfg = opt.view or {}
@@ -162,96 +162,157 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           delete obj.entry[ctx.key]
           update!
           obj.view.render!
+
+      block-processor =
+        init: ({node, entry, name, bobj, cfg}) ~>
+          if !cfg =>
+            try
+              if !obj.fields[name] or !(cfg = JSON.parse JSON.stringify obj.fields[name]) =>
+                throw new Error("config not found for field #{name}")
+            catch e
+              console.warn "exception when parsing block data for field name `#name`."
+              throw e
+          if !cfg.meta.title => cfg.meta.title = name
+          entry.block[name] =
+            cfg: cfg
+            path: name
+            inited: false
+            init: proxise -> if @inited => return Promise.resolve!
+          node.classList.toggle \d-none, true
+          # ensure the init rendering align with config
+          if lc.readonly => cfg.meta.readonly = true
+          Promise.resolve!
+            .then ~>
+              if bobj => return cfg <<< {root: node} <<< bobj{itf, bi}
+              bdef = if typeof(cfg.type) == \object => cfg.type
+              else if typeof(cfg.type) == \string => {name: cfg.type, version: \main}
+              else {name: '@makeform/input', version: \main}
+              manager.from bdef, {root: node, data: cfg.meta}
+                .then (o) ~>
+                  cfg <<< {itf: o.interface, bi: o.instance, root: node}
+                  # this is for cond
+                  entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
+            .then ~>
+              # again since remeta may be called before module loaded
+              itf = cfg.itf
+              if lc.readonly => cfg.meta.readonly = true
+              itf.deserialize cfg.meta, {init: true}
+              _adapt itf
+              entry.formmgr.add {widget: itf, path: name}
+              itf.mode entry.formmgr.mode!
+              entry.block[name].inited = true
+              entry.block[name].init.resolve true
+              if itf.manager!length => @fire \manager.changed
+              itf.on \manager.changed, ~> @fire \manager.changed
+              if !(itf.ctrl and (ret = itf.ctrl!) and ret.condctrl) => return
+              entry.subcond = ret.condctrl
+            .catch (e) -> return Promise.reject(e)
+        handler: ({node, name, ctx}) ->
+          cfg = (((obj.entry[ctx.key] or {}).block or {})[name] or {}).cfg or {}
+          vis = (((obj.entry[ctx.key] or {}).cond or {})._visibility or {})[name]
+          node.classList.toggle \d-none, (vis? and !vis)
+          # we should render subblock when this block is rendered.
+          # however, when there are many widgets,
+          # this might lead to significant performance issue.
+          # the main reason is because for now every value change leads to a rerendering
+          # of the whole form.
+          # we will have to refactor the whole form design about rendering to improve this.
+          if !cfg.itf => return
+          # TODO this seems to not work since once we render more than once,
+          # widget still be rendered. consider remove this.
+          if (dirty = obj.entry[ctx.key].dirty) and dirty.size =>
+            if dirty.has name => dirty.delete name
+            return
+          if cfg.lng != i18n.language =>
+            cfg.bi.transform \i18n
+            cfg.lng = i18n.language
+            # we suppose widget should render themselves for meta/value update,
+            # thus re-render is not necessary everytime;
+            # so we move it inside language transform block.
+            cfg.itf.render!
+
       handler =
         add: ({node, ctx}) ~> node.style.display = if (@mode! == \view or lc.readonly) => \none else ''
         "no-entry": ({node}) ~> node.classList.toggle \d-none, @content!length
         entry:
           init:
-            "@": ({ctx, views}) ~>
-              # cond use itf from fields. yet obj.fields is shared. so we dup it here.
-              # ctx.key for object mode will be undefined.
-              obj.entry[ctx.key] =
-                fields: {}
-                block: {}
-                formmgr: fmgr = new form.manager!
-                cond: new condctrl base-rule: ({meta}) -> if lc.readonly => meta.readonly = true
-              for k,v of obj.fields => obj.entry[ctx.key].fields[k] = {} <<< v
+            "@": ({ctx, node, views}) ~>
+              init = (ret = {}) ~>
+                obj.docroot = ret.host
+                # cond use itf from fields. yet obj.fields is shared. so we dup it here.
+                # ctx.key for object mode will be undefined.
+                obj.entry[ctx.key] =
+                  fields: {}
+                  doctree: blocks
+                  block: {}
+                  formmgr: fmgr = new form.manager!
+                  cond: new condctrl base-rule: ({meta}) -> if lc.readonly => meta.readonly = true
+                if obj.docroot =>
+                  blocks = obj.docroot.nodemgr!blocks!
+                  entry = obj.entry[ctx.key]
+                  for b in blocks =>
+                    name = b.node.id
+                    dom = obj.docroot.nodemgr!get-dom {id: name}
+                    meta = b.block.interface.serialize!
+                    block-processor.init {
+                      entry, name, cfg: {meta}
+                      node: dom
+                      bobj: {itf: b.block.interface, bi: b.block.instance}
+                    }
+                else for k,v of obj.fields => obj.entry[ctx.key].fields[k] = {} <<< v
+                obj.entry[ctx.key].cond.init {
+                  fields: obj.entry[ctx.key].fields
+                  conditions: obj.conditions or []
+                }
+                fmgr.mode @mode!
+                debounce 350 .then ->
+                  # prevent exception caused by quick deletion
+                  if !obj.entry[ctx.key] => return
+                  obj.entry[ctx.key].cond.run!
+                  views.0.render!
+                fmgr.on \change, (info) ->
+                  if !obj.entry[ctx.key] => return
+                  obj.entry[ctx.key].cond.run!
+                  # dirty: record changed paths to ensure minimal rendering.
+                  # when render with dirty items: only render those in dirty set.
+                  # otherwise render everything.
+                  if !obj.entry[ctx.key].dirty => obj.entry[ctx.key].dirty = new Set!
+                  if info and info.path => obj.entry[ctx.key].dirty.add info.path
+                  views.0.render!
+                  if obj.mode == \list =>
+                    # ctx may not be the original object, because it may be updated
+                    # and this is init which will only be called once.
+                    # thus we get the data object directly from obj.data.list
+                    if !(ret = obj.data.list.filter(-> it.key == ctx.key).0) => return
+                    ret.value = JSON.parse(JSON.stringify(fmgr.value!))
+                  else
+                    obj.data.object = JSON.parse(JSON.stringify(fmgr.value!)) or {}
+                  update!
+                @fire \manager.changed
+                if obj.instance and obj.instance.transform => obj.instance.transform \i18n
 
-              obj.entry[ctx.key].cond.init {
-                fields: obj.entry[ctx.key].fields
-                conditions: obj.conditions or []
-              }
-              fmgr.mode @mode!
-              debounce 350 .then ->
-                # prevent exception caused by quick deletion
-                if !obj.entry[ctx.key] => return
-                obj.entry[ctx.key].cond.run!
-                views.0.render!
-              fmgr.on \change, (info) ->
-                if !obj.entry[ctx.key] => return
-                obj.entry[ctx.key].cond.run!
-                # dirty: record changed paths to ensure minimal rendering.
-                # when render with dirty items: only render those in dirty set.
-                # otherwise render everything.
-                if !obj.entry[ctx.key].dirty => obj.entry[ctx.key].dirty = new Set!
-                if info and info.path => obj.entry[ctx.key].dirty.add info.path
-                views.0.render!
+              # composing: focus on nodetree editing and don't render entry
+              if !(obj.doctree and !obj.composing) => init!
+              else obj.doctree {root: node.querySelector('[ld=docroot]') or node} .then init
 
-                if obj.mode == \list =>
-                  # ctx may not be the original object, because it may be updated
-                  # and this is init which will only be called once.
-                  # thus we get the data object directly from obj.data.list
-                  if !(ret = obj.data.list.filter(-> it.key == ctx.key).0) => return
-                  ret.value = JSON.parse(JSON.stringify(fmgr.value!))
-                else
-                  obj.data.object = JSON.parse(JSON.stringify(fmgr.value!)) or {}
-                update!
-              @fire \manager.changed
-              if obj.instance and obj.instance.transform => obj.instance.transform \i18n
             block: ({node, ctxs, ctx}) ~>
               entry = obj.entry[ctx.key]
               name = node.dataset.name
-              try
-                if !obj.fields[name] or !(cfg = JSON.parse JSON.stringify obj.fields[name]) =>
-                  throw new Error("config not found for field #{name}")
-              catch e
-                console.warn "exception when parsing block data for field name `#name`."
-                throw e
-              if !cfg.meta.title => cfg.meta.title = name
-              entry.block[name] =
-                cfg: cfg
-                path: name
-                inited: false
-                init: proxise -> if @inited => return Promise.resolve!
-              node.classList.toggle \d-none, true
-              bdef = if typeof(cfg.type) == \object => cfg.type
-              else if typeof(cfg.type) == \string => {name: cfg.type, version: \main}
-              else {name: '@makeform/input', version: \main}
-              # ensure the init rendering align with config
-              if lc.readonly => cfg.meta.readonly = true
-              manager.from bdef, {root: node, data: cfg.meta}
-                .then (o) ~>
-                  cfg <<< {itf: o.interface, bi: o.instance, root: node}
-                  # again since remeta may be called before module loaded
-                  if lc.readonly => cfg.meta.readonly = true
-                  cfg.itf.deserialize cfg.meta, {init: true}
-                  # this is for cond
-                  entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
-                  _adapt o.interface
-                  entry.formmgr.add {widget: cfg.itf, path: name}
-                  cfg.itf.mode entry.formmgr.mode!
-                  entry.block[name].inited = true
-                  entry.block[name].init.resolve true
-                  if o.interface.manager!length => @fire \manager.changed
-                  o.interface.on \manager.changed, ~> @fire \manager.changed
-                  if !(o.interface.ctrl and (ret = o.interface.ctrl!) and ret.condctrl) => return
-                  entry.subcond = ret.condctrl
-                .catch (e) -> return Promise.reject(e)
+              block-processor.init {node, entry, name}
+
           handler:
             delete: ({node, ctx}) ~> node.style.display = if (@mode! == \view or lc.readonly) => \none else ''
             "@": ({node, ctx}) ~>
-              if obj.display != \active => return
-              node.classList.toggle \d-none, (ctx.key != obj.active-key)
+              if obj.display == \active =>
+                node.classList.toggle \d-none, (ctx.key != obj.active-key)
+              if !obj.doctree or obj.composing => return
+              if !((docroot = obj.docroot) and docroot.nodemgr) => return
+              blocks = if docroot => docroot.nodemgr!blocks! else null
+              entry = obj.entry[ctx.key]
+              for b in blocks =>
+                name = b.node.id
+                dom = docroot.nodemgr!get-dom {id: name}
+                block-processor.handler {node: dom, name, ctx}
 
             lng: ({node}) ~>
               node.classList.toggle \d-none, !(
@@ -273,28 +334,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
             block: ({node, ctxs, ctx}) ~>
               name = node.getAttribute(\data-name)
-              cfg = (((obj.entry[ctx.key] or {}).block or {})[name] or {}).cfg or {}
-              vis = (((obj.entry[ctx.key] or {}).cond or {})._visibility or {})[name]
-              node.classList.toggle \d-none, (vis? and !vis)
-              # we should render subblock when this block is rendered.
-              # however, when there are many widgets,
-              # this might lead to significant performance issue.
-              # the main reason is because for now every value change leads to a rerendering
-              # of the whole form.
-              # we will have to refactor the whole form design about rendering to improve this.
-              if !cfg.itf => return
-              # TODO this seems to not work since once we render more than once,
-              # widget still be rendered. consider remove this.
-              if (dirty = obj.entry[ctx.key].dirty) and dirty.size =>
-                if dirty.has name => dirty.delete name
-                return
-              if cfg.lng != i18n.language =>
-                cfg.bi.transform \i18n
-                cfg.lng = i18n.language
-                # we suppose widget should render themselves for meta/value update,
-                # thus re-render is not necessary everytime;
-                # so we move it inside language transform block.
-                cfg.itf.render!
+              block-processor.handler {node, name, ctx}
 
       opt = {} <<< (viewcfg.common or {}) <<< {
         init-render: false
