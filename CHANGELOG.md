@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.0
+
+ - support doctree and composing options
+
+
 ## v0.3.12
 
  - support meta event with additional option parameter
