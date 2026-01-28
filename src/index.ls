@@ -443,11 +443,12 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     if obj.adapt => obj.adapt host
     for key,entry of obj.entry => for name, field of entry.fields => if field.itf => _adapt field.itf
 
-  manager: (cb) ->
+  manager: ({depth = 0} = {}) ->
     ret = [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
+    if depth == 1 => return ret
     for k,v of obj.entry => for g,u of v.block =>
-      if u.cfg.itf and (mgrs = u.cfg.itf.manager!).length => ret ++= mgrs
-    ret
+      if u.cfg.itf and (mgrs = u.cfg.itf.manager({depth: depth - 1})).length => ret ++= mgrs
+    return ret
   ctrl: ->
     toggle: (o = {}) ~>
       if o.key => obj.active-key = o.key
