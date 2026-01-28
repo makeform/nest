@@ -204,6 +204,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               entry.block[name].init.resolve true
               if itf.manager!length => @fire \manager.changed
               itf.on \manager.changed, ~> @fire \manager.changed
+              itf.on \meta, ~> @fire \meta, @serialize!
               if !(itf.ctrl and (ret = itf.ctrl!) and ret.condctrl) => return
               entry.subcond = ret.condctrl
             .catch (e) -> return Promise.reject(e)
