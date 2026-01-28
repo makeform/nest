@@ -1,5 +1,13 @@
 # Change Logs
 
+## v1.0.1
+
+ - fix bug: only validate fields that are not disabled.
+ - cascade meta update from child up via meta event.
+ - support depth option in manager api call based on upcoming @plotdb/form API changes
+ - add a sample implementation with condctrl assuming formmgr.condctrl is
+
+
 ## v1.0.0
 
  - support doctree and composing options

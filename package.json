@@ -1,1 +1,1 @@
-{"name":"@makeform/nest","version":"1.0.0","description":"","scripts":{},"keywords":[],"author":"zbryikt","license":"MIT","devDependencies":{"@plotdb/srcbuild":"^0.0.69","fedep":"^1.6.0","livescript":"^1.6.0","uglify-js":"^3.13.1"}}
+{"name":"@makeform/nest","version":"1.0.1","description":"","scripts":{},"keywords":[],"author":"zbryikt","license":"MIT","devDependencies":{"@plotdb/srcbuild":"^0.0.69","fedep":"^1.6.0","livescript":"^1.6.0","uglify-js":"^3.13.1"}}
