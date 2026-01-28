@@ -247,6 +247,11 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   block: {}
                   formmgr: fmgr = new form.manager!
                   cond: new condctrl base-rule: ({meta}) -> if lc.readonly => meta.readonly = true
+                # FMGR/COND this is a experimental implementation of condition directly in formmgr,
+                # which attempt to support condition directly in formmgr.
+                # before we finalize the implementation, keep the sample code here for reference.
+                # see also FMGR/COND below
+                # fmgr.condition!reset conditions: /* TBD, such as obj.cx */
                 if obj.docroot =>
                   blocks = obj.docroot.nodemgr!blocks!
                   entry = obj.entry[ctx.key]
@@ -269,10 +274,12 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                   # prevent exception caused by quick deletion
                   if !obj.entry[ctx.key] => return
                   obj.entry[ctx.key].cond.run!
+                  # fmgr.condition!run! # see FMGR/COND above
                   views.0.render!
                 fmgr.on \change, (info) ->
                   if !obj.entry[ctx.key] => return
                   obj.entry[ctx.key].cond.run!
+                  # fmgr.condition!run! # see FMGR/COND above
                   # dirty: record changed paths to ensure minimal rendering.
                   # when render with dirty items: only render those in dirty set.
                   # otherwise render everything.
