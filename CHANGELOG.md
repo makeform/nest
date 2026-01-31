@@ -1,5 +1,11 @@
 # Change Logs
 
+## v1.0.2
+
+ - fix bug: value in list isn't set, possibly due to race condition between value update and init entry.
+   solved by always setting value after entry is inited
+
+
 ## v1.0.1
 
  - fix bug: only validate fields that are not disabled.

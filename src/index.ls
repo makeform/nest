@@ -239,6 +239,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           init:
             "@": ({ctx, node, views}) ~>
               init = (ret = {}) ~>
+                ps = []
                 obj.docroot = ret.host
                 # cond use itf from fields. yet obj.fields is shared. so we dup it here.
                 # ctx.key for object mode will be undefined.
@@ -260,16 +261,18 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                     name = b.node.id
                     dom = obj.docroot.nodemgr!get-dom {id: name}
                     meta = b.block.interface.serialize!
-                    block-processor.init {
+                    ps.push block-processor.init {
                       entry, name, cfg: {meta}
                       node: dom
                       bobj: {itf: b.block.interface, bi: b.block.instance}
                     }
                 else for k,v of obj.fields => obj.entry[ctx.key].fields[k] = {} <<< v
+                <~ Promise.all ps .then _
                 obj.entry[ctx.key].cond.init {
                   fields: obj.entry[ctx.key].fields
                   conditions: obj.conditions or []
                 }
+                <~ fmgr.value ctx.value, {init: true} .then _
                 fmgr.mode @mode!
                 debounce 350 .then ->
                   # prevent exception caused by quick deletion
