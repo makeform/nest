@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.3
+
+ - disable manager if widget is disabled.
+
+
 ## v1.0.2
 
  - fix bug: value in list isn't set, possibly due to race condition between value update and init entry.
