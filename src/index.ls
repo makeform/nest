@@ -448,9 +448,13 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
   manager: ({depth = 0} = {}) ->
     ret = [v for k,v of obj.entry or {}].map(->it.formmgr).filter(->it)
+    # disable `self-owned managers` based on disable status of the nest itself
+    ret.map ~> it.disable !!@disabled!
     if depth == 1 => return ret
     for k,v of obj.entry => for g,u of v.block =>
       if u.cfg.itf and (mgrs = u.cfg.itf.manager({depth: depth - 1})).length => ret ++= mgrs
+    # only disable `submanager` if nest itself is disabled.
+    if @disabled! => ret.map ~> it.disable true
     return ret
   ctrl: ->
     toggle: (o = {}) ~>
