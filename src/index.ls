@@ -402,7 +402,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           .then (r) ->
             is-init = r.filter(->it).length or opt.init
             ws = [v for k,v of o.block]
-              .filter -> !it.cfg.itf.disabled!
+              .filter -> it.cfg.itf and !it.cfg.itf.disabled!
             check-ws = ws
               .filter ->
                 it.cfg.itf and

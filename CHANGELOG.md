@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.4
+
+ - fix bug: exception when validating. ensure widget existence before calling its API
+
+
 ## v1.0.3
 
  - disable manager if widget is disabled.
