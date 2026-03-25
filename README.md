@@ -22,6 +22,7 @@ init with pubsub event `@makeform/nest:init` (or deprecated `init.nest` event) w
  - `conditions`: an array of conditional control definition objects. See `Conditional Control Mechanism` below.
  - `onchange(o)`: called when there are changes from formmgr. `o` is an object with following fields:
    - `formmgr`: the formmgr from which the change event fires.
+   - NOTE this parameter is removed: use `@on('change', ...)` in `init` call instead.
  - `validate(opt,obj)`: customized validation function.
    - `opt`: options including `init`, `force`. see `@plotdb/form` for more information.
    - `obj`: additional object from nest widget. contains following fields:
@@ -143,28 +144,6 @@ A sample rule object that refers to some nested fields:
         enabled: true
       }
     }
-
-You can enable a pseudo target and use it to write the nested conditional objects inside a nested widget:
-
-    /* condition of parent widget */
-    {
-      src: "region",
-      config: {
-        values: "foreign",
-        targets: ["nested", "pseudo"],
-        enabled: true
-      }
-    }
-
-    /* condition of child widget */
-    {
-      func: function() { this.isEnabled("pseudo"); },
-      config: {
-        targets: ["optionalField"],
-        enabled: true
-      }
-    }
-
 
 ### TBD: Controlling Parent Fields Based on Nested Fields
 
