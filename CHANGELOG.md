@@ -1,5 +1,11 @@
 # Change Logs
 
+## v0.3.16
+
+ - reverse changes in 3.14 and 3.15
+ - fix bug: `onchange` isn't fired due to internal update check.
+
+
 ## v0.3.15
 
  - fix bug: missing end comment mark

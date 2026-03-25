@@ -74,8 +74,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     #  default scene : flag on > inner update(block) > flag down
     #  race condition: flag on > outer update(block) > flag down > inner update
     sig =
-      same: -> !@internal
-      renew: -> @internal = true
+      same: -> @internal          # same: if we should skip since it's from ourselves.
+      renew: -> @internal = true  # renew: updated from internal. the next update will be from us.
       clear: -> @internal = false
 
     # from htc-viveland-2025. however, we need to cache the original readonly value,
@@ -109,42 +109,39 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     @on \meta, (m, o) ~> remeta @serialize!, o
     remeta data
-
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
-    # NOTE we used to have incorrect implementation in sig, which make this callback never run.
-    # ( see 0.3.13 / 1.0.5 ) yet, change event is fired from widget,
-    # so it seems not nevessary to apply render, init and value here.
-    # additional, `onchange` can be replaced directly with widget change event,
-    # so actually we don't have to use `onchange` with additional code here.
-    # for now we keep it in comment
-    /*
     @on \change, (d = {}) ->
-      if sig.same(d) => return sig.clear!
+      # onchange should be fired even for internal changes.
+      if sig.same(d) =>
+        if obj.onchange =>
+          if obj.mode == \list =>
+            (e) <- obj.data[]list.map _
+            if obj.entry[e.key] => obj.onchange {formmgr: obj.entry[e.key].formmgr}
+          else obj.onchange {formmgr: obj.entry[key].formmgr}
+        return sig.clear!
       obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
         keyhash = Object.fromEntries obj.data.list.map(->[it.key,true])
         if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
         for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
-        #obj.view.render!
+        obj.view.render!
         obj.data.list.map (e) ->
           if !obj.entry[e.key] => return
-          #ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
-          Promise.resolve!
-            #.then -> Promise.all ps
-            #.then -> obj.entry[e.key].formmgr.value e.value
+          ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
+          Promise.all ps
+            .then -> obj.entry[e.key].formmgr.value e.value
             .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[e.key].formmgr}
       else
         # if data of this field were from some other fields, it may not contain data.object.
         # thus we must make sure it exist.
         obj.data.{}object
         key = undefined
-        #ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
-        Promise.resolve!
-          #.then -> Promise.all ps
-          #.then -> obj.entry[key].formmgr.value obj.data.object
+        ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
+        Promise.all ps
+          .then -> obj.entry[key].formmgr.value obj.data.object
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
-    */
+
     _viewcfg = (viewcfg) ~>
       update = ~>
         sig.renew!
