@@ -144,7 +144,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           #.then -> Promise.all ps
           #.then -> obj.entry[key].formmgr.value obj.data.object
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
-
+    */
     _viewcfg = (viewcfg) ~>
       update = ~>
         sig.renew!

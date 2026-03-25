@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.15
+
+ - fix bug: missing end comment mark
+
+
 ## v0.3.14
 
  - remove on change handler
