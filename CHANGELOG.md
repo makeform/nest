@@ -1,5 +1,44 @@
 # Change Logs
 
+## v1.0.6
+
+ - apply v0.3.14 feature changes
+
+
+## v1.0.5
+
+ - apply v0.3.13 bug fix
+
+
+## v1.0.4
+
+ - fix bug: exception when validating. ensure widget existence before calling its API
+
+
+## v1.0.3
+
+ - disable manager if widget is disabled.
+
+
+## v1.0.2
+
+ - fix bug: value in list isn't set, possibly due to race condition between value update and init entry.
+   solved by always setting value after entry is inited
+
+
+## v1.0.1
+
+ - fix bug: only validate fields that are not disabled.
+ - cascade meta update from child up via meta event.
+ - support depth option in manager api call based on upcoming @plotdb/form API changes
+ - add a sample implementation with condctrl assuming formmgr.condctrl is
+
+
+## v1.0.0
+
+ - support doctree and composing options
+
+
 ## v0.3.14
 
  - remove on change handler
