@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.13
+
+ - fix bug: sig.same returned inversed result
+
+
 ## v0.3.12
 
  - support meta event with additional option parameter
