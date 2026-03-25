@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.6
+
+ - apply v0.3.14 feature changes
+
+
 ## v1.0.5
 
  - apply v0.3.13 bug fix
@@ -32,6 +37,11 @@
 ## v1.0.0
 
  - support doctree and composing options
+
+
+## v0.3.14
+
+ - remove on change handler
 
 
 ## v0.3.13

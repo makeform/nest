@@ -111,6 +111,13 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     remeta data
 
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
+    # NOTE we used to have incorrect implementation in sig, which make this callback never run.
+    # ( see 0.3.13 / 1.0.5 ) yet, change event is fired from widget,
+    # so it seems not nevessary to apply render, init and value here.
+    # additional, `onchange` can be replaced directly with widget change event,
+    # so actually we don't have to use `onchange` with additional code here.
+    # for now we keep it in comment
+    /*
     @on \change, (d = {}) ->
       if sig.same(d) => return sig.clear!
       obj.data = d
@@ -119,22 +126,25 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         keyhash = Object.fromEntries obj.data.list.map(->[it.key,true])
         if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
         for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
-        obj.view.render!
+        #obj.view.render!
         obj.data.list.map (e) ->
           if !obj.entry[e.key] => return
-          ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
-          Promise.all ps
-            .then -> obj.entry[e.key].formmgr.value e.value
+          #ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
+          Promise.resolve!
+            #.then -> Promise.all ps
+            #.then -> obj.entry[e.key].formmgr.value e.value
             .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[e.key].formmgr}
       else
         # if data of this field were from some other fields, it may not contain data.object.
         # thus we must make sure it exist.
         obj.data.{}object
         key = undefined
-        ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
-        Promise.all ps
-          .then -> obj.entry[key].formmgr.value obj.data.object
+        #ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
+        Promise.resolve!
+          #.then -> Promise.all ps
+          #.then -> obj.entry[key].formmgr.value obj.data.object
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
+    */
 
     _viewcfg = (viewcfg) ~>
       update = ~>
