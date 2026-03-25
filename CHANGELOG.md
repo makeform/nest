@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.7
+
+ - apply v0.3.16 feature changes
+
+
 ## v1.0.6
 
  - apply v0.3.14 feature changes
@@ -37,6 +42,17 @@
 ## v1.0.0
 
  - support doctree and composing options
+
+
+## v0.3.16
+
+ - reverse changes in 3.14 and 3.15
+ - fix bug: `onchange` isn't fired due to internal update check.
+
+
+## v0.3.15
+
+ - fix bug: missing end comment mark
 
 
 ## v0.3.14

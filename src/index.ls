@@ -74,8 +74,8 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     #  default scene : flag on > inner update(block) > flag down
     #  race condition: flag on > outer update(block) > flag down > inner update
     sig =
-      same: -> !@internal
-      renew: -> @internal = true
+      same: -> @internal          # same: if we should skip since it's from ourselves.
+      renew: -> @internal = true  # renew: updated from internal. the next update will be from us.
       clear: -> @internal = false
 
     # from htc-viveland-2025. however, we need to cache the original readonly value,
@@ -109,7 +109,6 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     @on \meta, (m, o) ~> remeta @serialize!, o
     remeta data
-
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
     # NOTE we used to have incorrect implementation in sig, which make this callback never run.
     # ( see 0.3.13 / 1.0.5 ) yet, change event is fired from widget,
@@ -119,7 +118,14 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     # for now we keep it in comment
     /*
     @on \change, (d = {}) ->
-      if sig.same(d) => return sig.clear!
+      # onchange should be fired even for internal changes.
+      if sig.same(d) =>
+        if obj.onchange =>
+          if obj.mode == \list =>
+            (e) <- obj.data[]list.map _
+            if obj.entry[e.key] => obj.onchange {formmgr: obj.entry[e.key].formmgr}
+          else obj.onchange {formmgr: obj.entry[key].formmgr}
+        return sig.clear!
       obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
