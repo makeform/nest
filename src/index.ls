@@ -74,7 +74,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     #  default scene : flag on > inner update(block) > flag down
     #  race condition: flag on > outer update(block) > flag down > inner update
     sig =
-      same: -> @internal
+      same: -> !@internal
       renew: -> @internal = true
       clear: -> @internal = false
 
