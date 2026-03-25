@@ -145,28 +145,6 @@ A sample rule object that refers to some nested fields:
       }
     }
 
-You can enable a pseudo target and use it to write the nested conditional objects inside a nested widget:
-
-    /* condition of parent widget */
-    {
-      src: "region",
-      config: {
-        values: "foreign",
-        targets: ["nested", "pseudo"],
-        enabled: true
-      }
-    }
-
-    /* condition of child widget */
-    {
-      func: function() { this.isEnabled("pseudo"); },
-      config: {
-        targets: ["optionalField"],
-        enabled: true
-      }
-    }
-
-
 ### TBD: Controlling Parent Fields Based on Nested Fields
 
 Since a parent widget can receive notifications when its nested fields change, it's possible to define a rule object in the parent that reacts to changes in its children - effectively enabling bottom-up conditional control.
