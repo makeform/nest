@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.14
+
+ - remove on change handler
+
+
 ## v0.3.13
 
  - fix bug: sig.same returned inversed result
