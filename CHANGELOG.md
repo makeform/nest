@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.9
+
+ - fix bug: `autofill` doesn't work (caused by incorrect field access)
+
+
 ## v1.0.8
 
  - fix bug: v0.3.16 changes isn't correctly applied in v1.0.7
