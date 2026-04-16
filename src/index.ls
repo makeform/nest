@@ -347,7 +347,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               if cfg and cfg.itf =>
                 if !cfg.autofill => cfg.itf.on \change, (cfg.autofill = -> views.0.render \autofill)
                 node.textContent = cfg.itf.content!
-              else if @autofill? => node.textContent = @autofill {name}
+              else if obj.autofill? => node.textContent = obj.autofill {name}
 
             block: ({node, ctxs, ctx}) ~>
               name = node.getAttribute(\data-name)

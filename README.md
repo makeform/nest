@@ -34,7 +34,9 @@ init with pubsub event `@makeform/nest:init` (or deprecated `init.nest` event) w
  - `instance`: the block instance of your block. optional.
    - while `@makeform/nest` renders things for you, it doesn't have your instance object and thus
      it can't call your transform for i18n if needed. If you need post-i18n during view rendering,
-     put your instance object (usually available in `@_instance`) here.
+     put your instance object (usually available in `@\_instance`) here.
+ - `autofill(opt)`: called when auto filling fields without corresponding widget.
+   - `name`: name to be filled
 
 
 ## Usage
