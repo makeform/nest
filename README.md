@@ -77,7 +77,8 @@ Note that you should overwrite `@makeform/nest`'s DOM and implement `widget` plu
 Available mixins:
 
  - `widget(name)`: create a widget with specific name.
- - `vis(name)`: add a visibility control with specific name.
+ - `vis(name)`: add a visibility control with specific name. uses the `visibility` ld selector; see below.
+   - disabled fields will be hidden by default. `+vis` is only needed for controlling visibility of additional DOM.
 
 
 ## ld selectors
