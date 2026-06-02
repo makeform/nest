@@ -467,3 +467,25 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       if o.key => obj.active-key = o.key
       obj.view.render!
     condctrl: -> return Object.fromEntries [[k,v.cond] for k,v of obj.entry]
+
+  # paths(path): return available next-segment options after the given path prefix.
+  # delegates to the entry's formmgr; all entries share the same field structure.
+  paths: (path) ->
+    entry = if obj.mode == \object
+      then obj.entry[undefined]
+      else (Object.values obj.entry).0
+    if !entry => return []
+    entry.formmgr.paths path
+
+  # resolve(path): traverse path and return matching widget(s).
+  # object mode: single entry delegation.
+  # list mode: fan out across all entries and collect results.
+  resolve: (path) ->
+    if !path or !path.length => return []
+    if obj.mode == \object =>
+      entry = obj.entry[undefined]
+      if !entry => return []
+      return entry.formmgr.resolve path
+    ret = []
+    for k,v of obj.entry => ret ++= v.formmgr.resolve path
+    ret
