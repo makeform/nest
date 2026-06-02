@@ -1,5 +1,10 @@
 # Change Logs
 
+## v1.0.11
+
+ - fix bug: fields not available in docroot mode.
+
+
 ## v1.0.10
 
  - support `paths` and `resolve` api
