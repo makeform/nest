@@ -77,14 +77,35 @@ Note that you should overwrite `@makeform/nest`'s DOM and implement `widget` plu
 Available mixins:
 
  - `widget(name)`: create a widget with specific name.
- - `vis(name)`: add a visibility control with specific name.
+ - `vis(name)`: add a visibility control with specific name. uses the `visibility` ld selector; see below.
+   - disabled fields will be hidden by default. `+vis` is only needed for controlling visibility of additional DOM.
 
 
 ## ld selectors
 
+General selectors:
+
  - `lng`: show this node only if current i18n language tag or code matches `data-lng` value.
  - `visibility`: show this node based on target name specified by `data-name` from condition controls.
  - `block`: node containing widget with name stored in `data-name` from `fields`.
+
+The following ld selectors are available in **list mode** only:
+
+ - `add`: button to append a new entry. hidden automatically in view/readonly mode.
+ - `delete`: button to remove the current entry. placed inside `ld-each="entry"`. hidden automatically in view/readonly mode.
+ - `no-entry`: shown when the list is empty; hidden otherwise.
+ - `entry`: list selector ( use with `ld-each` ). Template node repeated for each entry in the list.
+
+Sample pug for list mode:
+
+    div(plug="widget")
+      include @/@makeform/nest/mixin.pug
+      p(ld="no-entry") No entries yet.
+      div(ld-each="entry")
+        +widget("field-a")
+        +widget("field-b")
+        button(ld="delete") Remove
+      button(ld="add") Add
 
 
 ## Conditional Control Mechanism

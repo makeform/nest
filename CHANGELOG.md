@@ -1,5 +1,11 @@
 # Change Logs
 
+## v1.0.10
+
+ - support `paths` and `resolve` api
+ - upgrade dependencies
+
+
 ## v1.0.9
 
  - fix bug: `autofill` doesn't work (caused by incorrect field access)
