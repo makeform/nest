@@ -196,11 +196,11 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
               manager.from bdef, {root: node, data: cfg.meta}
                 .then (o) ~>
                   cfg <<< {itf: o.interface, bi: o.instance, root: node}
-                  # this is for cond
-                  entry.fields[name] <<< {itf: o.interface, bi: o.instance, root: node}
             .then ~>
               # again since remeta may be called before module loaded
               itf = cfg.itf
+              # update entry.fields for condctrl regardless of bobj or not
+              entry.fields[name] <<< cfg{itf, bi, root}
               if lc.readonly => cfg.meta.readonly = true
               itf.deserialize cfg.meta, {init: true}
               _adapt itf
@@ -267,6 +267,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                     name = b.node.id
                     dom = obj.docroot.nodemgr!get-dom {id: name}
                     meta = b.block.interface.serialize!
+                    entry.fields[name] = {meta}
                     ps.push block-processor.init {
                       entry, name, cfg: {meta}
                       node: dom
