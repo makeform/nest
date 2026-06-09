@@ -45,39 +45,6 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
   pubsub.on \init.nest, f
 
   init: ->
-    # we use sig to let `@on 'change'` below know if the event is from internal value update.
-    # because we don't need rerender for internal value update
-    # so why do we still fire change event? because we need it to notify parent that values are changed.
-    # parent nest widget relys on widget's change event to update value, so it's necessary.
-    # NOTE thus - we should always regen sig if we update value,
-    # otherwise remote value may not be updated correctly.
-    # we may consider redesign how `value` works by recursively fetching value from widgets everytime
-    # which eliminate the need to update value completely.
-
-    # Approach A: write a random sig token in data.
-    # this correctly works for distinguish update source yet it makes data becom dirty easily.
-    /*
-    sig =
-      same: (d) ->
-        token = ((obj.data or {}).sig or {}).token
-        return token and (d.sig or {}).token == token
-      renew: ->
-        sig = obj.data.{}sig
-        sig <<< count: sig.count or 0, ts: Date.now!
-        sig.token = "#{Math.random!toString(36)substring(2)}-#{sig.ts}-#{sig.count}"
-    clear: -> # do nothing, since sig token always be replaced when renew.
-    */
-    # Approach B: simply use a flag.
-    # there may be race condition between flag > update
-    # yet once a change event will be fired everytime when flag is on
-    # we can at least always cancel one flag. e.g.,
-    #  default scene : flag on > inner update(block) > flag down
-    #  race condition: flag on > outer update(block) > flag down > inner update
-    sig =
-      same: -> @internal          # same: if we should skip since it's from ourselves.
-      renew: -> @internal = true  # renew: updated from internal. the next update will be from us.
-      clear: -> @internal = false
-
     # from htc-viveland-2025. however, we need to cache the original readonly value,
     # and take into account the effects of the conditions
     lc =
@@ -110,15 +77,27 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     @on \meta, (m, o) ~> remeta @serialize!, o
     remeta data
     @on \mode, (m) ~> for k,v of obj.entry => v.formmgr.mode m
-    @on \change, (d = {}) ->
-      # onchange should be fired even for internal changes.
-      if sig.same(d) =>
-        if obj.onchange =>
-          if obj.mode == \list =>
-            (e) <- obj.data[]list.map _
-            if obj.entry[e.key] => obj.onchange {formmgr: obj.entry[e.key].formmgr}
-          else obj.onchange {formmgr: obj.entry[key].formmgr}
-        return sig.clear!
+
+    # we need change event to notify parent that values are changed.
+    # parent nest widget relys on widget's change event to update value, so it's necessary.
+    # we also have to listen to it to update our internal value state.
+    # we can consider reimplement value storing approach,
+    # so retriving value from a nest widget triggers cascading process
+    # 資料更新兩條路:
+    #  - value(data): 外部設定值進來 nest
+    #  - change: 內部欄位更新通知 nest
+    # 元件取值會拿 `_value`. 但 nest 本身維護資料在 obj.data.
+    # 因此:
+    #  - 外部更新 (value): 觸發 vuh > obj.data 更新, 寫入 fmgr 以更新元件.
+    #    _value 比我們還新, 保持同步.
+    #  - 內部更新 (change): 任何更新都呼叫內部 update -> 呼叫 value 更新元件 _value
+    #    該更新會再次觸發 vuh  到此.
+    # 要注意內外 ( obj.data & _value ) 必須是不同物件, 這樣才不會被 is-equal 擋掉,
+    # 造成 change event 缺失. 只要有編輯, change event 就必須發出給上層,
+    # 而這在此是經由 update 裡的 value 觸發.
+    # 就寫法: 內部監聽 change, 來寫值 (實際不必要)
+    # @on \change, @_value-update-handler = (d = {}) ->
+    @_value-update-handler = (d = {}) ->
       obj.data = d
       if obj.mode == \list =>
         obj.data.[]list
@@ -126,28 +105,31 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
         for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
         obj.view.render!
-        obj.data.list.map (e) ->
+        p = Promise.all(obj.data.list.map (e) ->
           if !obj.entry[e.key] => return
           ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
           Promise.all ps
             .then -> obj.entry[e.key].formmgr.value e.value
             .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[e.key].formmgr}
+        )
       else
         # if data of this field were from some other fields, it may not contain data.object.
         # thus we must make sure it exist.
         obj.data.{}object
         key = undefined
         ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
-        Promise.all ps
+        p = Promise.all ps
           .then -> obj.entry[key].formmgr.value obj.data.object
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
+      return p
 
     _viewcfg = (viewcfg) ~>
       update = ~>
-        sig.renew!
         # obj.data{sig} is deprecated. here we still keep it's value. see sig object comments above.
         v = if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}
         if !v.sig => delete v.sig
+        # this helps update widget value and trigger change event.
+        # change event is mandatory because parent widgets will need it to update
         @value v
       action-click =
         add: ->
@@ -402,6 +384,9 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
   content: ->
     if obj.mode == \list => obj.data.list # for term validation to work.
     else obj.data.object
+  value: (v) ->
+    if arguments.length => return @_value-update-handler v
+    return if @_value? => JSON.parse(JSON.stringify(@_value)) else @_value
   validate: (opt = {}) ->
     ps = [v for k,v of obj.entry or {}]
       .map (o) ->
@@ -490,3 +475,26 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     ret = []
     for k,v of obj.entry => ret ++= v.formmgr.resolve path
     ret
+
+  # export(): return flat column array for spreadsheet export.
+  # object mode: single manager, prepend nest title to headers.
+  # list mode: one manager per entry, ordered by obj.data.list, entry index prepended to sort-key/uid/header.
+  export: ->
+    title = @_meta.title or ""
+    cols = []
+    if obj.mode == \object =>
+      entry = obj.entry[undefined]
+      if !entry => return []
+      cols = entry.formmgr.export!map (col) ->
+        col.header = if col.header => "#title / #{col.header}" else title
+        col
+    else
+      (obj.data.list or []).map (e, i) ->
+        entry = obj.entry[e.key]
+        if !entry => return
+        cols ++= entry.formmgr.export!map (col) ->
+          col.sort-key = [i] ++ col.sort-key
+          col.uid      = "#{i + 1}|#{col.uid}"
+          col.header   = "(#{i + 1}) / #{col.header}"
+          col
+    cols

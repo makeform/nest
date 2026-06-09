@@ -1,5 +1,12 @@
 # Change Logs
 
+## v2.0.0
+
+ - breaking changes: instead of `change` event, rely on `value()` api to update internal value so caller can track when value update is complete.
+ - remove sig.same related function due to value / change api update
+ - support `export` api
+
+
 ## v1.0.11
 
  - fix bug: fields not available in docroot mode.
