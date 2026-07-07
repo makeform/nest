@@ -260,6 +260,9 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                 obj.entry[ctx.key].cond.init {
                   fields: obj.entry[ctx.key].fields
                   conditions: obj.conditions or []
+                  ctx: ~>
+                    idx = obj.data.list.findIndex -> it.key == ctx.key
+                    {idx, key: ctx.key}
                 }
                 <~ fmgr.value ctx.value, {init: true} .then _
                 fmgr.mode @mode!

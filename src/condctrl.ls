@@ -23,6 +23,7 @@ condctrl.prototype = Object.create(Object.prototype) <<<
   init: (opt = {}) ->
     @_fields = opt.fields or @_fields or {}
     @_list = opt.conditions or @_list or []
+    @_ctx = opt.ctx or @_ctx or (-> {})
     for k,v of @_fields =>
       if !(v.meta or {}).condition => continue
       @_list.splice 0, 0, {src: k, config: v.meta.condition}
@@ -79,8 +80,9 @@ condctrl.prototype = Object.create(Object.prototype) <<<
     {source, values, targets, is-required, enabled, disabled, readonly, func} = cfg
     if func =>
       result = true
+      entry-ctx = @_ctx!
       for tgt in targets =>
-        active = !!(func.apply @, [{} <<< cfg <<< {target: tgt}]) and !(precond? and !precond)
+        active = !!(func.apply @, [{} <<< cfg <<< {target: tgt} <<< entry-ctx]) and !(precond? and !precond)
         result = result and active
         if Array.isArray(tgt) and tgt.1 =>
           @subcond {target: tgt.0, config: {} <<< cfg <<< {target: tgt.slice(1)}, active}
