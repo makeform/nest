@@ -1,5 +1,10 @@
 # Change Logs
 
+## v2.0.1
+
+ - upgrade dependencies
+
+
 ## v2.1.0 (upcoming)
 
  - support ctx in condctrl to provide information such as idx and context object to cond func
