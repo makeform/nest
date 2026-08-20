@@ -1,85 +1,8 @@
 # Change Logs
 
-## v2.0.1
+## v0.3.17
 
- - upgrade dependencies
-
-
-## v2.1.0 (upcoming)
-
- - support ctx in condctrl to provide information such as idx and context object to cond func
-
-
-## v2.0.0
-
- - breaking changes: instead of `change` event, rely on `value()` api to update internal value so caller can track when value update is complete.
- - remove sig.same related function due to value / change api update
- - support `export` api
-
-
-## v1.0.11
-
- - fix bug: fields not available in docroot mode.
-
-
-## v1.0.10
-
- - support `paths` and `resolve` api
- - upgrade dependencies
-
-
-## v1.0.9
-
- - fix bug: `autofill` doesn't work (caused by incorrect field access)
-
-
-## v1.0.8
-
- - fix bug: v0.3.16 changes isn't correctly applied in v1.0.7
-
-
-## v1.0.7
-
- - apply v0.3.16 feature changes
-
-
-## v1.0.6
-
- - apply v0.3.14 feature changes
-
-
-## v1.0.5
-
- - apply v0.3.13 bug fix
-
-
-## v1.0.4
-
- - fix bug: exception when validating. ensure widget existence before calling its API
-
-
-## v1.0.3
-
- - disable manager if widget is disabled.
-
-
-## v1.0.2
-
- - fix bug: value in list isn't set, possibly due to race condition between value update and init entry.
-   solved by always setting value after entry is inited
-
-
-## v1.0.1
-
- - fix bug: only validate fields that are not disabled.
- - cascade meta update from child up via meta event.
- - support depth option in manager api call based on upcoming @plotdb/form API changes
- - add a sample implementation with condctrl assuming formmgr.condctrl is
-
-
-## v1.0.0
-
- - support doctree and composing options
+ - fix bug: fields that are not used are still used to update blocks that are not created in remeta
 
 
 ## v0.3.16
