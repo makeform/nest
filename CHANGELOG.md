@@ -1,5 +1,10 @@
 # Change Logs
 
+## v2.0.2
+
+ - fix bug: fields that are not used are still used to update blocks that are not created in remeta
+
+
 ## v2.0.1
 
  - upgrade dependencies
