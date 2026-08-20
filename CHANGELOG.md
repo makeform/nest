@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.3.17
+
+ - fix bug: fields that are not used are still used to update blocks that are not created in remeta
+
+
 ## v0.3.16
 
  - reverse changes in 3.14 and 3.15
