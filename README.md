@@ -34,7 +34,9 @@ init with pubsub event `@makeform/nest:init` (or deprecated `init.nest` event) w
  - `instance`: the block instance of your block. optional.
    - while `@makeform/nest` renders things for you, it doesn't have your instance object and thus
      it can't call your transform for i18n if needed. If you need post-i18n during view rendering,
-     put your instance object (usually available in `@_instance`) here.
+     put your instance object (usually available in `@\_instance`) here.
+ - `autofill(opt)`: called when auto filling fields without corresponding widget.
+   - `name`: name to be filled
 
 
 ## Usage
@@ -75,14 +77,35 @@ Note that you should overwrite `@makeform/nest`'s DOM and implement `widget` plu
 Available mixins:
 
  - `widget(name)`: create a widget with specific name.
- - `vis(name)`: add a visibility control with specific name.
+ - `vis(name)`: add a visibility control with specific name. uses the `visibility` ld selector; see below.
+   - disabled fields will be hidden by default. `+vis` is only needed for controlling visibility of additional DOM.
 
 
 ## ld selectors
 
+General selectors:
+
  - `lng`: show this node only if current i18n language tag or code matches `data-lng` value.
  - `visibility`: show this node based on target name specified by `data-name` from condition controls.
  - `block`: node containing widget with name stored in `data-name` from `fields`.
+
+The following ld selectors are available in **list mode** only:
+
+ - `add`: button to append a new entry. hidden automatically in view/readonly mode.
+ - `delete`: button to remove the current entry. placed inside `ld-each="entry"`. hidden automatically in view/readonly mode.
+ - `no-entry`: shown when the list is empty; hidden otherwise.
+ - `entry`: list selector ( use with `ld-each` ). Template node repeated for each entry in the list.
+
+Sample pug for list mode:
+
+    div(plug="widget")
+      include @/@makeform/nest/mixin.pug
+      p(ld="no-entry") No entries yet.
+      div(ld-each="entry")
+        +widget("field-a")
+        +widget("field-b")
+        button(ld="delete") Remove
+      button(ld="add") Add
 
 
 ## Conditional Control Mechanism
@@ -144,6 +167,28 @@ A sample rule object that refers to some nested fields:
         enabled: true
       }
     }
+
+You can enable a pseudo target and use it to write the nested conditional objects inside a nested widget:
+
+    /* condition of parent widget */
+    {
+      src: "region",
+      config: {
+        values: "foreign",
+        targets: ["nested", "pseudo"],
+        enabled: true
+      }
+    }
+
+    /* condition of child widget */
+    {
+      func: function() { this.isEnabled("pseudo"); },
+      config: {
+        targets: ["optionalField"],
+        enabled: true
+      }
+    }
+
 
 ### TBD: Controlling Parent Fields Based on Nested Fields
 
