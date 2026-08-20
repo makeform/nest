@@ -97,7 +97,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       lc.readonly = !!lc.meta.readonly
       for k,v of obj.entry =>
         for n, f of v.fields =>
-          if !(itf = v.block[n].cfg.itf) => continue
+          if !(itf = v.block?[n]?cfg?itf) => continue
           if !(lc.readonlys[k] or {})[n]? => lc.readonlys{}[k][n] = !!f.meta.readonly
           # field should always be readonly if widget is readonly.
           nv = if lc.readonly => lc.readonly else lc.readonlys[k][n]
