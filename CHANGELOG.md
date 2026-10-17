@@ -1,5 +1,13 @@
 # Change Logs
 
+## v2.1.0
+
+ - support ctx in condctrl to provide information such as idx and context object to cond func
+ - support `settle` api for waiting until entries are created, inited and conditions are applied
+ - `settle` also waits for internal updates, which may otherwise override values set after them
+ - export: prepend nest title to headers in list mode, so entries of different lists are distinguishable
+
+
 ## v2.0.2
 
  - fix bug: fields that are not used are still used to update blocks that are not created in remeta
@@ -8,14 +16,6 @@
 ## v2.0.1
 
  - upgrade dependencies
-
-
-## v2.1.0 (upcoming)
-
- - support ctx in condctrl to provide information such as idx and context object to cond func
- - support `settle` api for waiting until entries are created, inited and conditions are applied
- - `settle` also waits for internal updates, which may otherwise override values set after them
- - export: prepend nest title to headers in list mode, so entries of different lists are distinguishable
 
 
 ## v2.0.0
