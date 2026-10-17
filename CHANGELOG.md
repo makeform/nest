@@ -1,5 +1,11 @@
 # Change Logs
 
+## v0.3.18 (upcoming)
+
+ - support `settle` api for waiting until values are applied, entries are inited and conditions are applied
+ - support `export` api ( ported from v2.0.0 )
+
+
 ## v0.3.17
 
  - fix bug: fields that are not used are still used to update blocks that are not created in remeta

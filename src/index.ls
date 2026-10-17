@@ -126,7 +126,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
         for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
         obj.view.render!
-        obj.data.list.map (e) ->
+        obj.applying = Promise.all obj.data.list.map (e) ->
           if !obj.entry[e.key] => return
           ps = [v for k,v of obj.entry[e.key].block or {}].map -> it.init!
           Promise.all ps
@@ -138,7 +138,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         obj.data.{}object
         key = undefined
         ps = [v for k,v of (obj.entry[key].block or {})].map -> it.init!
-        Promise.all ps
+        obj.applying = Promise.all ps
           .then -> obj.entry[key].formmgr.value obj.data.object
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
 
@@ -405,6 +405,43 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     for k,v of obj.entry => for g,u of v.block =>
       if u.cfg.itf and (mgrs = u.cfg.itf.manager!).length => ret ++= mgrs
     ret
+  # settle(): wait until values are applied to entries, their widgets are inited and conditions are applied.
+  settle: ->
+    Promise.resolve(obj.applying)
+      .catch ->
+      .then ->
+        keys = if obj.mode == \list => (obj.data.list or []).map(-> it.key) else [undefined]
+        Promise.all keys.map (k) ->
+          if !(e = obj.entry[k]) => return
+          Promise.all [v.init! for n,v of e.block]
+            .then ->
+              if !(e = obj.entry[k]) => return
+              e.cond.run!
+              if e.formmgr.settle => e.formmgr.settle!
+
+  # export(): return flat column array for spreadsheet export.
+  # object mode: single manager, prepend nest title to headers.
+  # list mode: one manager per entry, ordered by obj.data.list, entry index prepended to sort-key/uid/header.
+  export: ->
+    title = @_meta.title or ""
+    cols = []
+    if obj.mode == \object =>
+      entry = obj.entry[undefined]
+      if !entry => return []
+      cols = entry.formmgr.export!map (col) ->
+        col.header = if col.header => "#title / #{col.header}" else title
+        col
+    else
+      (obj.data.list or []).map (e, i) ->
+        entry = obj.entry[e.key]
+        if !entry => return
+        cols ++= entry.formmgr.export!map (col) ->
+          col.sort-key = [i] ++ col.sort-key
+          col.uid      = "#{i + 1}|#{col.uid}"
+          col.header   = "(#{i + 1}) / #{col.header}"
+          col
+    cols
+
   ctrl: ->
     toggle: (o = {}) ~>
       if o.key => obj.active-key = o.key
