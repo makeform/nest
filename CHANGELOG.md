@@ -14,6 +14,8 @@
 
  - support ctx in condctrl to provide information such as idx and context object to cond func
  - support `settle` api for waiting until entries are created, inited and conditions are applied
+ - `settle` also waits for internal updates, which may otherwise override values set after them
+ - export: prepend nest title to headers in list mode, so entries of different lists are distinguishable
 
 
 ## v2.0.0
