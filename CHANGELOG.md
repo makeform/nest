@@ -1,6 +1,6 @@
 # Change Logs
 
-## v0.3.18 (upcoming)
+## v0.3.18
 
  - support `settle` api for waiting until values are applied, entries are inited and conditions are applied
  - support `export` api ( ported from v2.0.0 )
