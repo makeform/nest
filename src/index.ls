@@ -144,11 +144,14 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
     _viewcfg = (viewcfg) ~>
       update = ~>
-        sig.renew!
         # obj.data{sig} is deprecated. here we still keep it's value. see sig object comments above.
         v = if obj.mode == \list => obj.data{list,sig} else obj.data{object,sig}
         if !v.sig => delete v.sig
-        @value v
+        # no change event for unchanged value, so the flag would never be cleared
+        # and the next external update would be skipped.
+        if @is-equal v => return
+        sig.renew!
+        obj.updating = @value v
       action-click =
         add: ->
           if lc.readonly => return
@@ -406,22 +409,26 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       if u.cfg.itf and (mgrs = u.cfg.itf.manager!).length => ret ++= mgrs
     ret
   # settle(): wait until values are applied to entries, their widgets are inited and conditions are applied.
+  # updates may be triggered while waiting, so wait again until they stop.
   settle: ->
-    Promise.resolve(obj.applying)
-      .catch ->
-      .then ->
-        keys = if obj.mode == \list => (obj.data.list or []).map(-> it.key) else [undefined]
-        Promise.all keys.map (k) ->
-          if !(e = obj.entry[k]) => return
-          Promise.all [v.init! for n,v of e.block]
-            .then ->
-              if !(e = obj.entry[k]) => return
-              e.cond.run!
-              if e.formmgr.settle => e.formmgr.settle!
+    _ = (count = 0) ->
+      [a, u] = [obj.applying, obj.updating]
+      Promise.all [a, u].map -> Promise.resolve(it).catch ->
+        .then ->
+          keys = if obj.mode == \list => (obj.data.list or []).map(-> it.key) else [undefined]
+          Promise.all keys.map (k) ->
+            if !(e = obj.entry[k]) => return
+            Promise.all [v.init! for n,v of e.block]
+              .then ->
+                if !(e = obj.entry[k]) => return
+                e.cond.run!
+                if e.formmgr.settle => e.formmgr.settle!
+        .then -> if count < 10 and (a != obj.applying or u != obj.updating) => _ count + 1
+    _!
 
   # export(): return flat column array for spreadsheet export.
   # object mode: single manager, prepend nest title to headers.
-  # list mode: one manager per entry, ordered by obj.data.list, entry index prepended to sort-key/uid/header.
+  # list mode: one manager per entry, ordered by obj.data.list, entry index prepended to sort-key/uid, nest title with entry index to header.
   export: ->
     title = @_meta.title or ""
     cols = []
@@ -438,7 +445,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         cols ++= entry.formmgr.export!map (col) ->
           col.sort-key = [i] ++ col.sort-key
           col.uid      = "#{i + 1}|#{col.uid}"
-          col.header   = "(#{i + 1}) / #{col.header}"
+          col.header   = "#title(#{i + 1}) / #{col.header}"
           col
     cols
 

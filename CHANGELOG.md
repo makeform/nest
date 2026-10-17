@@ -4,6 +4,9 @@
 
  - support `settle` api for waiting until values are applied, entries are inited and conditions are applied
  - support `export` api ( ported from v2.0.0 )
+ - export: prepend nest title to headers in list mode, so entries of different lists are distinguishable
+ - fix bug: internal update flag isn't cleared if value is unchanged, which skips the next external update
+ - `settle` also waits for internal updates, which may otherwise override values set after them
 
 
 ## v0.3.17
