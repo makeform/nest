@@ -21,6 +21,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
       object: {} # for object mode
     fields: null
     entry: {} # for non-serializable objects associated with entries in data.list by key
+    ready: {} # promises of entry initialization by key, for `settle`
     subcond: ({field, key}) -> if !key => [v.subcond for k,v of @entry].filter(->it)
 
   _adapt = (itf) ->
@@ -104,6 +105,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         keyhash = Object.fromEntries obj.data.list.map(->[it.key,true])
         if !obj.active-key => obj.active-key = (obj.data.list.0 or {}).key
         for k,v of obj.entry => if !keyhash[k] => delete obj.entry[k]
+        for k,v of obj.ready => if !keyhash[k] => delete obj.ready[k]
         obj.view.render!
         p = Promise.all(obj.data.list.map (e) ->
           if !obj.entry[e.key] => return
@@ -121,7 +123,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
         p = Promise.all ps
           .then -> obj.entry[key].formmgr.value obj.data.object
           .then -> if obj.onchange => obj.onchange {formmgr: obj.entry[key].formmgr}
-      return p
+      return obj.applying = p
 
     _viewcfg = (viewcfg) ~>
       update = ~>
@@ -148,6 +150,7 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
           list.splice list.indexOf(ctx), 1
           list.map (d,i) -> d.idx = i + 1
           delete obj.entry[ctx.key]
+          delete obj.ready[ctx.key]
           update!
           obj.view.render!
 
@@ -295,8 +298,10 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                 if obj.instance and obj.instance.transform => obj.instance.transform \i18n
 
               # composing: focus on nodetree editing and don't render entry
-              if !(obj.doctree and !obj.composing) => init!
+              p = if !(obj.doctree and !obj.composing) => init!
               else obj.doctree {root: node.querySelector('[ld=docroot]') or node} .then init
+              # `settle` shouldn't hang on failed entries
+              obj.ready[ctx.key] = Promise.resolve(p).catch (e) -> console.error e
 
             block: ({node, ctxs, ctx}) ~>
               entry = obj.entry[ctx.key]
@@ -478,6 +483,21 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
     ret = []
     for k,v of obj.entry => ret ++= v.formmgr.resolve path
     ret
+
+  # settle(): wait until entries are created, their widgets are inited and conditions are applied.
+  # entries in docroot mode are created asynchronously, so `value()` may resolve before they are ready.
+  settle: ->
+    Promise.resolve(obj.applying)
+      .catch ->
+      .then ->
+        keys = if obj.mode == \list => (obj.data.list or []).map(-> it.key) else [undefined]
+        Promise.all keys.map (k) ->
+          Promise.resolve(obj.ready[k])
+            .then -> if (e = obj.entry[k]) => Promise.all [v.init! for n,v of e.block]
+            .then ->
+              if !(e = obj.entry[k]) => return
+              e.cond.run!
+              if e.formmgr.settle => e.formmgr.settle!
 
   # export(): return flat column array for spreadsheet export.
   # object mode: single manager, prepend nest title to headers.

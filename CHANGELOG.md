@@ -13,6 +13,7 @@
 ## v2.1.0 (upcoming)
 
  - support ctx in condctrl to provide information such as idx and context object to cond func
+ - support `settle` api for waiting until entries are created, inited and conditions are applied
 
 
 ## v2.0.0
