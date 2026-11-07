@@ -1,5 +1,12 @@
 # Change Logs
 
+## v2.2.0 (unreleased)
+
+ - `resolve` in list mode supports selectors in the first segment: `*`, `#<key>`, `:nth-child(<n>)` and index numbers.
+   paths without a selector still fan out across all entries.
+ - warn if a nest in a composer document has conditions, which may conflict with ones managed by the root.
+
+
 ## v2.1.1
 
  - fix bug: `apply` throws ReferenceError with targets deeper than 2 levels, since it uses undefined `config`

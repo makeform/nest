@@ -260,6 +260,13 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
                     }
                 else for k,v of obj.fields => obj.entry[ctx.key].fields[k] = {} <<< v
                 <~ Promise.all ps .then _
+                # in a composer document, conditions are expected to be managed by the root ( @plotdb/form conditor ).
+                # conditions here still work, but may conflict with those.
+                if obj.docroot and !obj.warned and (
+                  (obj.conditions or []).length or [v for k,v of obj.entry[ctx.key].fields].some(-> it.meta?condition)
+                ) =>
+                  obj.warned = true
+                  console.warn "[@makeform/nest] conditions in nest under a composer document may conflict with ones managed by the root."
                 obj.entry[ctx.key].cond.init {
                   fields: obj.entry[ctx.key].fields
                   conditions: obj.conditions or []
@@ -473,15 +480,25 @@ mod = ({root, ctx, data, parent, t, i18n, manager, pubsub}) ->
 
   # resolve(path): traverse path and return matching widget(s).
   # object mode: single entry delegation.
-  # list mode: fan out across all entries and collect results.
+  # list mode: entries chosen by a selector in the first segment ( see @plotdb/form conditor ):
+  #   `*`, `#<key>`, `:nth-child(<n>)` ( from 1 ) or a number ( index from 0 ).
+  #   without a selector, fan out across all entries, same as `*`.
   resolve: (path) ->
     if !path or !path.length => return []
     if obj.mode == \object =>
       entry = obj.entry[undefined]
       if !entry => return []
-      return entry.formmgr.resolve path
+      return entry.formmgr.resolve(if path.0 == \* => path.slice(1) else path)
+    [h, ...t] = path
+    keys = obj.data.list.map -> it.key
+    sel = if h == \* => keys
+    else if typeof(h) == \number => [keys[h]]
+    else if typeof(h) == \string and (m = /^#(.+)$/.exec h) => [m.1]
+    else if typeof(h) == \string and (m = /^:nth-child\((\d+)\)$/.exec h) => [keys[+m.1 - 1]]
+    else null
+    if sel => path = t else sel = keys
     ret = []
-    for k,v of obj.entry => ret ++= v.formmgr.resolve path
+    for k in sel => if obj.entry[k] => ret ++= obj.entry[k].formmgr.resolve path
     ret
 
   # settle(): wait until entries are created, their widgets are inited and conditions are applied.
