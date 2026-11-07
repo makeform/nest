@@ -1,6 +1,6 @@
 # Change Logs
 
-## v2.1.1 (unreleased)
+## v2.1.1
 
  - fix bug: `apply` throws ReferenceError with targets deeper than 2 levels, since it uses undefined `config`
 
