@@ -71,7 +71,7 @@ condctrl.prototype = Object.create(Object.prototype) <<<
     if !(Array.isArray(target) and target.1) => return
     @subcond {
       target: target.0
-      config: {target: config.target.slice(1), enabled, disabled, is-required, readonly},
+      config: {target: target.slice(1), enabled, disabled, is-required, readonly},
       active: active
     }
 

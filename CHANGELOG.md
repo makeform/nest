@@ -1,5 +1,10 @@
 # Change Logs
 
+## v2.1.1 (unreleased)
+
+ - fix bug: `apply` throws ReferenceError with targets deeper than 2 levels, since it uses undefined `config`
+
+
 ## v2.1.0
 
  - support ctx in condctrl to provide information such as idx and context object to cond func
