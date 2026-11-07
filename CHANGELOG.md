@@ -1,6 +1,6 @@
 # Change Logs
 
-## v2.2.0 (unreleased)
+## v2.2.0
 
  - `resolve` in list mode supports selectors in the first segment: `*`, `#<key>`, `:nth-child(<n>)` and index numbers.
    paths without a selector still fan out across all entries.
